@@ -34,9 +34,9 @@
     + [Anonymous Functions](#anonymous-functions)
     + [Calling Functions](#calling-functions)
   * [Functional Programming in LOL](#functional-programming-in-lol)
-    + [Pure Functions](#pure-functions)
-    + [First-Class Functions](#first-class-functions)
-    + [Higher-Order Functions](#higher-order-functions)
+    + [Referential Transparency](#referential-transparency)
+    + [First-Class, Higher-Order, and Partial Functions](#first-class--higher-order--and-partial-functions)
+    + [Built-In Functions](#built-in-functions)
 - [6. Structures](#6-structures)
   * [List](#list)
     + [Declaring Lists](#declaring-lists)
@@ -52,9 +52,12 @@
     + [Defining Tensors](#defining-tensors)
     + [The Dimension of Tensor](#the-dimension-of-tensor)
     + [Accessing Tensor Elements](#accessing-tensor-elements)
-- [Citation](#citation)
+- [citation](#citation)
+
 
 # 1. Intro
+
+LinearAlgebra Oriented Language (LOL)  is created under one principle: a programming language specifically designed for mathematicians to perform linear algebra related tasks. Although programming languages such as Python or Matlab provide powerful functions, remembering what each function is called or which symbol represents matrix multiplication (`*` vs `@`) can be annoying. Thus, a language paradigm is developed that follows the style of mathematics as close as possible so that one can focus solely on mathematics without worrying too much about the language details. With LOL, we hope to provide powerful libraries like Python and Matlab with the standard function calling (`a.inverse()`), as well as intuitive syntax (`a^(-1)`) so that one can copy the equations directly from paper without any hassle. In addition, LOL is created with functional programming in mind, aiming to help mathematicians produce more robust and logical code.
 
 # 2. Comments and Whitespace
 
@@ -370,7 +373,9 @@ println(addTwo(3));
 
 LOL supports many features for functional programming. Applying functional programming principles in LOL can lead to improved code quality,  faster debugging, strong logical support, and ease of testing. Below are functional programming elements supported and recommended by LOL. Functional programming is not strictly enforced in LOL. Programmers can choose between functional and imperative programming depending on their needs.
 
-### Pure Functions
+### Referential Transparency
+
+Referential transparency is a crucial concept in functional programming. To achieve referential transparency, a function needs to be pure and immutable.
 
 A pure function is a function which:
 1. Given the same input, will always return the same output;
@@ -401,9 +406,9 @@ func float calculate_area (float r, float pi) {
 println(calculate_area(10.0, PI));
 ```
 
-The function calculate_area now becomes pure, since given the same inputs, it returns the same output.
+The function calculate_area now becomes pure, since it only relies on the parameters passed into the function. You can also observe that this function always returns the same output, given the same inputs. Therefore, the function is referentially transparent.
 
-### First-Class Functions
+### First-Class, Higher-Order, and Partial Functions
 
 First class function is an essential element of functional programming. The idea of functions as first-class entities is that functions are also treated as values and used as data. Functions as first-class entities can:
 1. refer to it from constants and variables
@@ -425,20 +430,101 @@ Since LOL supports first-class functions, meaning that functions can be treated 
 
 ```
 func float ops(func f, float a, float b) {
-    return func (a, b);
+    return f(a, b);
 }
 
 println(ops((/), 2.0, 3.0));
 println(ops((*), 2.0, 3.0));
 ```
+As you can see, a function f is passed into the parameter of function ops, just like a regular variable.
 
-### Higher-Order Functions
-
-A higher-order function is a function that either:
+Given the support for First-Class Functions, LOL naturally also supports Higher-Order Functions. A higher-order function is a function that either:
 1. takes one or more functions as arguments, or
 2. returns a function as its result
 
-The ops function we implemented above is a higher-order function because it takes an operator function as an argument and uses it.
+Consider the following code snippet:
+
+```
+func float apply_f(func f) {
+    // returns an anonymous function that executes function f on two float parameters
+    return func float (float i, float j) {
+        return f(i) + f(j);
+    };
+}
+
+func float double(float x) {
+    return x * 2;
+}
+
+func float sum_of_double = apply_f(double);
+
+println(sum_of_double(3, 5)); // output: 16
+```
+
+The apply_f function we implemented above is a higher-order function because it takes an operator function as an argument and uses it.
+
+High-Order Function enables a very powerful use case: partial functions. Consider the following code snippet:
+```
+func float partial_ops_generator(func f, float a, float b) {
+
+    // returns an anonymous function declaration
+    // with a,b passed in as default parameters
+    return func float (float i = a, float j = b) {
+        return f(i, j);
+    };
+}
+
+// In the functions below, we first pass in a function, then a wildcard _ for the first float variable, i.e., not specifying a default value, and a concrete number as default value for the second float variable, in order to generate partial functions.
+func float addFive = ops_generator((+), _, 5);
+func float timesSix = ops_generator((*), _, 6);
+
+println(addFive(3)); // output: 8
+println(timesSix(5)); // output: 30
+```
+
+In the code snippet above, addFive and timesSix are partial functions generated from partial_ops_generator. Although addFive and timesSix can technically take two parameters, supplying one is sufficient, since the second parameter has been given as default.
+
+
+### Built-In Functions
+
+Built-in functions are functions that are predefined in the Shoo language. These functions can be called anywhere without the user having to define them first. All built-in functions are also first-class functions.
+
+- `print`
+
+  The `print()` function can be used to print a string. It takes one argument: the string you want to print. This argument cannot be missing.
+
+- `println`
+
+  println is the same as `print()`, except it also prints a newline after the string that is passed in.
+
+- `dim`
+
+  dim returns the length of an iterable object. If the given object is list, dim returns the length of the list. If the given object is a tensor, dim returns a int list indicating the shape of the tensor.
+
+- `str_of_bool`
+
+  This function takes a boolean and returns a string version of the boolean value by printing true if the boolean is true and false if the boolean is false.
+
+- `str_of_float`
+
+  This function takes a float and returns a string version of that float following the C language printing style achieved when using printf with `%g` in C.
+
+- `str_of_int`
+
+  This function takes an integer and returns a string version of the digits in the integer.
+
+- `int_of_float`
+
+  This function takes a float and returns an int by rounding the float to its nearest integer representation.
+
+- `int_of_str`
+
+  This function takes a string and returns a integer by converting the characters in the string into their corresponding digits. If the string provided doesn't represent a valid base-10 integer, this function returns -1.
+
+- `float_of_int`
+
+  This function takes an integer and returns the floating point representation of that integer.
+
 
 # 6. Structures
 ## List
