@@ -16,8 +16,8 @@
       - [Associativity](#associativity)
     + [Assignment Operator](#assignment-operator)
     + [Arithmetic Operators](#arithmetic-operators)
-  * [Logical Operators](#logical-operators)
-    + [Expressions](#expressions)
+    + [Logical Operators](#logical-operators)
+  * [Expressions](#expressions)
 - [4. Variables](#4-variables)
   * [Variable Naming](#variable-naming)
   * [Scope of Variables](#scope-of-variables)
@@ -113,7 +113,7 @@ We can change the priority of a LOL operator by enclosing the lower order priori
 
 #### Associativity
 
-When an expression has two operators with the same precedence, the expression is evaluated according to its associativity. For example, `2\*2\*3` is treated as `(2\*2)\*3` since the `*` operator has right-to-left associativity.
+When an expression has two operators with the same precedence, the expression is evaluated according to its associativity. For example, `2*2*3` is treated as `(2*2)*3` since the `*` operator has right-to-left associativity.
 
 ### Assignment Operator
 
@@ -147,21 +147,21 @@ The equal sign `=` is used for assignment. It has right-to-left associativity.
   Tensor v3 = v1.v2; // v3=[32]
   ```
 
-- '@' is used for outer product in the traditional mathematical sense for vectors
+- `@` is used for outer product in the traditional mathematical sense for vectors
 
-- '^' is used for division in the traditional mathematical sense for int and float types, and tensor object.
+- `^` is used for division in the traditional mathematical sense for int and float types, and tensor object.
 
-- '==' is used for checking equality. This boolean operator works for int, float and string types.
+- `==` is used for checking equality. This boolean operator works for int, float and string types.
 
-- '!=' is used for checking inequality. This boolean operator works for int, float and string types, and other defined structs.
+- `!=` is used for checking inequality. This boolean operator works for int, float and string types, and other defined structs.
 
-- '<', '>', '>=', '<=' work only for int and float types.
+- `<`, `>`, `>=`, `<=` work only for int and float types.
 
-## Logical Operators
+### Logical Operators
 
 `!` is used for *NOT* in boolean expressions. `AND` and `OR` are reserved for keywords in boolean expressions.
 
-### Expressions
+## Expressions
 An expression consists of at least one operand and zero or more operators. Operands are typed objects such as constants, variables, and function calls that return values. Below are some examples:
 
 ```
@@ -180,10 +180,20 @@ For parentheses group subexpressions, innermost expressions are evaluated first:
 ## Variable Naming
 
 All variable names must follow [a-zA-Z][a-zA-Z0-9]*. Reserved words are not allowed. Reserved words are as follows:
-```
-int, float, string, bool, true, false, List,Tensor, if, elif, else,for, while, func, return, void, in, struct, AND, OR,
-optional: var
-```
+- int
+- float
+- string
+- bool, true, false
+- List,Tensor
+- if, elif, else
+- for, while
+- func
+- return
+- void
+- in
+- struct
+- AND, OR,
+- var (optional)
 
 ## Scope of Variables
 
@@ -439,7 +449,7 @@ A list is a container of primitive types, structs, tensors, functions, or other 
 
 The declaration and definition of lists can happen in one statement or two. See next section below about how to do declare and define lists in one statement.
 
-The type of the elements in an list is specified at the time of definition. The size of the list is not fixed and will grow dynamically. Lists are declared using the keyword List, followed by arrow brackets, which contain the type of the elements in the list, (<type>), the list name, and a semicolon. The semicolon can be omitted if the list is being declared and defined in one line.
+The type of the elements in an list is specified at the time of definition. The size of the list is not fixed and will grow dynamically. Lists are declared using the keyword List, followed by arrow brackets, which contain the type of the elements in the list, `<type>`, the list name, and a semicolon. The semicolon can be omitted if the list is being declared and defined in one line.
 
 ```
 /* Declare a variable of type List<int>.
@@ -579,7 +589,7 @@ Tensor t;
 
 ### Defining Tensors
 
-You automatically define the size of the tensor when you define a tensor. Tensors are fixed in size. To define a tensor, you simply define the elements of the tensor explicitly. The elements are put in square brackets and are separated by space ( ). There can be zero or more elements in the brackets (i.e. the brackets can be empty). The last element in the list of elements is not followed by a space. The whole statement is terminated by a semicolon.
+You automatically define the size of the tensor when you define a tensor. Tensors are fixed in size. To define a tensor, you simply define the elements of the tensor explicitly. The elements are put in square brackets and are separated by space `( )`. There can be zero or more elements in the brackets (i.e. the brackets can be empty). The last element in the list of elements is not followed by a space. The whole statement is terminated by a semicolon.
 
 ```
 /* Declare a tensor and specify the elements in the tensor explicitly during definition all in one statement. */
