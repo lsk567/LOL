@@ -1,3 +1,11 @@
+type typ = 
+	Any
+	| Void 
+	| Int 
+	| Float 
+	| Bool 
+	| String
+
 type operator = Add | Sub | Mul | Div
 
 type expr =

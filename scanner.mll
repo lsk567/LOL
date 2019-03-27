@@ -4,6 +4,11 @@ rule token =
   parse [' ' '\t' '\r' '\n'] { token lexbuf }
       | "//"                 { linec lexbuf } (* Single-line  Comments *)
       | "/*"                 { comment 0 lexbuf} (* Multi-line  Comments *)
+      | '('                  { LPAREN }
+      | ')'                  { RPAREN }
+      | '{'                  { LBRACE }
+      | '}'                  { RBRACE }
+      | ','                  { COMMA }
       | '+'                  { PLUS }
       | '-'                  { MINUS }
       | '*'                  { TIMES }

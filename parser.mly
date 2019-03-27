@@ -1,7 +1,8 @@
 %{ open Ast %}
 
 %token PLUS MINUS TIMES DIVIDE EOF
-%token ASSIGN SEMI
+%token ASSIGN SEMI COMMA
+%token LPAREN RPAREN LBRACE RBRACE
 %token <int> LITERAL
 %token <string> VARIABLE
 
@@ -24,3 +25,12 @@ expr:
 | VARIABLE ASSIGN expr { Asn($1, $3) }
 | LITERAL          { Lit($1) }
 | VARIABLE         { Var($1) }
+| LPAREN expr RPAREN { $2 }
+
+args_opt:
+  { [] }
+| args_list { List.rev $1 }
+
+args_list:
+  expr { [$1] }
+| args_list COMMA expr { $3 :: $1 }
