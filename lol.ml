@@ -10,7 +10,6 @@ let () =
   let speclist = [
     ("-a", Arg.Unit (set_action Ast), "Print the AST");
     ("-s", Arg.Unit (set_action Sast), "Print the SAST");
-    ("-ls", Arg.Unit (set_action Lsast), "Print the LSAST");
     ("-l", Arg.Unit (set_action LLVM_IR), "Print the generated LLVM IR");
     ("-c", Arg.Unit (set_action Compile),
       "Check and print the generated LLVM IR (default)");

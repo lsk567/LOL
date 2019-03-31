@@ -37,7 +37,7 @@ rule token =
       | "bool"               { BOOL }
       | "float"              { FLOAT }
       | "void"               { VOID }
-      | "true"|"false" as lxm           { BOOLLIT(lxm)  }
+      | "true"|"false" as lxm           { BOOLLIT(bool_of_string lxm)  }
       | ['0'-'9']+ as lxm               { INTLIT(int_of_string lxm) }
       | ['0'-'9']*"."['0'-'9']+ as lxm  { FLOATLIT(lxm) }
       | '"'                             { str (Buffer.create 16) lexbuf }

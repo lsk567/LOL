@@ -25,7 +25,7 @@
 %right NOT
 
 %start program
-%type <Ast.expr> program
+%type <Ast.program> program
 
 %%
 
@@ -42,9 +42,10 @@ stmt:
   | RETURN expr_opt SEMI                    { Return($2)            } /* return; */
   | IF LPAREN expr RPAREN LBRACE stmt_list RBRACE false_branch
                                             { If($3, List.rev $6, $8) } /* If, else, elif stuff */
-  | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt
-                                            { For($3, $5, $7, $9)   }
-  | WHILE LPAREN expr RPAREN stmt           { While($3, $5)         }
+  | FOR LPAREN loop_init_opt SEMI expr SEMI expr_opt RPAREN LBRACE stmt_list RBRACE
+                                            { For($3, $5, $7, List.rev $10) }
+  | WHILE LPAREN expr RPAREN LBRACE stmt RBRACE
+                                            { For(None, $3, None, List.rev $6) }
   | FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
                                             { FDecl ( Func({ param_typs = List.map (fun (ty, _) -> ty) $5; return_typ = $2 }),
                                                      $3,
@@ -60,12 +61,17 @@ expr_opt:
 | expr          { $1 }
 
 params_opt:
-/* nothing */ { [] }
+  /* nothing */ { [] }
 | param_list    { List.rev $1 }
 
 param_list:
   typ ID { [($1, $2)] }
 | param_list COMMA typ ID { ($3, $4) :: $1 }
+
+loop_init_opt:
+  /* nothing */{ None }
+| expr { Some(Expr($1)) }
+| typ ID ASSIGN expr { Some(VDecl($1, $2, Some($4))) }
 
 /* if stuff */
 false_branch: elif { $1 } | cf_else { $1 } | %prec NOELSE { [] }
@@ -79,10 +85,10 @@ ELSE LBRACE stmt_list RBRACE { List.rev $3 }
 
 expr:
   /* atomic units*/
-    INTLIT           { Literal ($1) }
-  | FLOATLIT	       { Fliteral($1) }
-  | BOOLLIT          { BLiteral($1) }
-  | STRLIT           { SLiteral($1) }
+    INTLIT           { IntLit ($1) }
+  | FLOATLIT	       { Floatlit($1) }
+  | BOOLLIT          { BoolLit($1) }
+  | STRLIT           { StrLit($1) }
   | ID               { Id($1) }
   /* Binop */
   | expr PLUS   expr { Binop($1, Add, $3) }
