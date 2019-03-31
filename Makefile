@@ -16,7 +16,7 @@ lol.native:
 	ocamlbuild -use-ocamlfind -pkgs llvm lol.native
 
 builtins.o :
-	cc -c -o builtins.o src/builtins.c -lm
+	cc -c -o builtins.o builtins.c -lm
 
 .PHONY : clean
 clean :

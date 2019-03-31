@@ -24,6 +24,7 @@ let () =
     Ast -> print_string (Ast.string_of_program ast)
   | _ ->
     let sast = Semant.check_program ast in
+    let lsast = Lift.lift sast in
     match !action with
       Ast     -> print_string (Ast.string_of_program ast)
     | Sast    -> print_string (Sast.string_of_sprogram sast)

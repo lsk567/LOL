@@ -9,6 +9,8 @@ type styp =
   | SString
   | SVoid
   | SFunc of sfunc_typ
+  | SABSTRACT
+  | SAny
 
 and sfunc_typ = {
     sparam_typs: styp list;
@@ -30,6 +32,7 @@ and sx =
   | SAssign of sexpr * sexpr
   | SCall of sexpr * sexpr list
   | SFExpr of sfexpr
+  | SClosure of sclsr
   | SNoexpr
 
 
@@ -41,6 +44,11 @@ and sfexpr = {
 }
 
 and sbind = styp * string
+
+and sclsr = {
+  ind: int;
+  free_vars: sbind list;
+}
 
 (* statements *)
 and sstmt =
@@ -70,6 +78,8 @@ let rec fmt_styp = function
   | SFloat -> "sfloat"
   | SBool -> "sbool"
   | SString -> "sstring"
+  | SABSTRACT -> "SABSTRACT"
+  | SAny -> "SAny"
 
 let fmt_sparams l =
   let fmt_p = function
@@ -93,6 +103,9 @@ let rec fmt_sexpr (_,s) =
     * typ = e.typ; body = e.body}. See test programs for examples. *)
    | SFExpr(s) -> fmt_three "FExpr" (fmt_sparams s.sparams)
                     (fmt_styp s.styp) (fmt_sstmt_list s.sbody)
+   | SClosure(clsr) -> fmt_two "Closure" (string_of_int clsr.ind)
+                        (fmt_list (List.map (fun (t, n) -> fmt_styp t ^ " " ^ n)
+                        clsr.free_vars))
    | SNoexpr -> ""
   )
 
