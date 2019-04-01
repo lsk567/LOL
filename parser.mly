@@ -38,19 +38,82 @@ stmt_list:
 
 stmt:
     expr SEMI                               { Expr($1)              } /* x = 3; */
-  | typ ID init_opt SEMI                    { VDecl ($1,$2,$3)       } /* int x; int y =3;*/
-  | RETURN noexpr_expr SEMI                 { Return($2)            } /* return; */
+  /* Declarations */
+  | typ ID init_opt SEMI                    { VDecl ($1,$2,$3) } /* Initialize variables. Can have default init. */
+  | fun_decl                                { $1 }
+  | RETURN noexpr_expr SEMI                 { Return($2) } /*  Return a value */
+  /* Control Flows */
   | IF LPAREN expr RPAREN LBRACE stmt_list RBRACE false_branch
                                             { If($3, List.rev $6, $8) } /* If, else, elif stuff */
   | FOR LPAREN loop_init_opt SEMI expr_opt SEMI expr_opt RPAREN LBRACE stmt_list RBRACE
-                                            { For($3, $5, $7, List.rev $10) }
+                                            { For($3, $5, $7, List.rev $10) } /* For loop; for (;;) */
   | WHILE LPAREN expr_opt RPAREN LBRACE stmt_list RBRACE
-                                            { For(None, $3, None, List.rev $6) }
-  | FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-                                            { VDecl ( Func({ param_typs = List.map (fun (ty, _) -> ty) $5; return_typ = $2 }),
-                                                     $3,
-                                                     Some(FExpr({ name = $3; typ = $2; params = $5; body = List.rev $8 }))
-                                            ) } /* (typ list * ret_typ,ID, Function expression )*/
+                                            { For(None, $3, None, List.rev $6) } /* While loop, can be treated as a for loop */
+
+fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
+  FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
+    { FDecl( Func({ param_typs = List.map (fun (ty, _) -> ty) $5; return_typ = $2 }),
+      $3, FExpr({ typ = $2; name = $3; params = $5; body = List.rev $8 }))}
+
+/* if stuff */
+false_branch: elif { $1 } | cf_else { $1 } | %prec NOELSE { [] }
+
+elif:
+ELIF LPAREN expr RPAREN LBRACE stmt_list RBRACE false_branch
+    { [If($3, List.rev $6, $8)] }
+
+cf_else:
+ELSE LBRACE stmt_list RBRACE { List.rev $3 }
+
+/* Expressions */
+expr:
+  /* Accesors */
+    accessor         { $1                     }
+  /* Assignmnent */
+  | expr ASSIGN expr { Assign($1, $3)         }
+  /* Binop */
+  | expr PLUS   expr { Binop($1, Add, $3)     }
+  | expr MINUS  expr { Binop($1, Sub, $3)     }
+  | expr TIMES  expr { Binop($1, Mul, $3)     }
+  | expr DIVIDE expr { Binop($1, Div, $3)     }
+  | expr EQ     expr { Binop($1, Equal, $3)   }
+  | expr NEQ    expr { Binop($1, Neq,   $3)   }
+  | expr LT     expr { Binop($1, Less,  $3)   }
+  | expr LEQ    expr { Binop($1, Leq,   $3)   }
+  | expr GT     expr { Binop($1, Greater, $3) }
+  | expr GEQ    expr { Binop($1, Geq,   $3)   }
+  | expr AND    expr { Binop($1, And,   $3)   }
+  | expr OR     expr { Binop($1, Or,    $3)   }
+  /* Unnop */
+  | MINUS expr %prec NOT { Unop(Neg, $2)      }
+  | NOT expr             { Unop(Not, $2)      }
+  /* Brackets for precedence */
+  | LPAREN expr RPAREN   { $2                 }
+
+accessor:
+    accessor LPAREN args_opt RPAREN { Call($1, $3)  } /* fun(x) */
+  | atom { $1 }
+
+atom:
+  /* atomic units*/
+    INTLIT           { IntLit ($1) }
+  | FLOATLIT	       { FloatLit($1) }
+  | BOOLLIT          { BoolLit($1) }
+  | STRLIT           { StrLit($1) }
+  | ID               { Id($1) }
+
+/* Types */
+ret_typ:
+    VOID { Void }
+  | typ { $1 }
+
+typ:
+    INT { Int }
+  | FLOAT { Float }
+  | BOOL { Bool }
+  | STRING { String }
+
+/* Helpers */
 
 init_opt:
   /* nothing */ { None }
@@ -84,62 +147,3 @@ args_opt:
 arg_list:
   expr { [$1] }
 | arg_list COMMA expr { $3 :: $1 }
-
-/* if stuff */
-false_branch: elif { $1 } | cf_else { $1 } | %prec NOELSE { [] }
-
-elif:
-ELIF LPAREN expr RPAREN LBRACE stmt_list RBRACE false_branch
-    { [If($3, List.rev $6, $8)] }
-
-cf_else:
-ELSE LBRACE stmt_list RBRACE { List.rev $3 }
-
-expr:
-  /* Binop */
-  | expr PLUS   expr { Binop($1, Add, $3) }
-  | expr MINUS  expr { Binop($1, Sub, $3) }
-  | expr TIMES  expr { Binop($1, Mul, $3) }
-  | expr DIVIDE expr { Binop($1, Div, $3) }
-  | expr EQ     expr { Binop($1, Equal, $3)   }
-  | expr NEQ    expr { Binop($1, Neq,   $3)   }
-  | expr LT     expr { Binop($1, Less,  $3)   }
-  | expr LEQ    expr { Binop($1, Leq,   $3)   }
-  | expr GT     expr { Binop($1, Greater, $3) }
-  | expr GEQ    expr { Binop($1, Geq,   $3)   }
-  | expr AND    expr { Binop($1, And,   $3)   }
-  | expr OR     expr { Binop($1, Or,    $3)   }
-  /* Unnop */
-  | MINUS expr %prec NOT { Unop(Neg, $2)      }
-  | NOT expr         { Unop(Not, $2)          }
-  /* Anonymous Function NotImplement
-  | function_expr { FExpr($1) }*/
-  /* Assignmnent */
-  | expr ASSIGN expr   { Assign($1, $3)         }
-  | accessor {$1}
-  /* precedence */
-  | LPAREN expr RPAREN { $2 }
-
-accessor:
-  /* Accessing */
-  | accessor LPAREN args_opt RPAREN { Call($1, $3)  } /* fun(x) */
-  | atom { $1 }
-
-atom:
-  /* atomic units*/
-    INTLIT           { IntLit ($1) }
-  | FLOATLIT	       { FloatLit($1) }
-  | BOOLLIT          { BoolLit($1) }
-  | STRLIT           { StrLit($1) }
-  | ID               { Id($1) }
-
-/* Types */
-ret_typ:
-    VOID { Void }
-  | typ { $1 }
-
-typ:
-    INT { Int }
-  | FLOAT { Float }
-  | BOOL { Bool }
-  | STRING { String }

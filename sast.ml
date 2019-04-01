@@ -55,6 +55,7 @@ and sstmt =
     SBlock of sstmt list
   | SExpr of sexpr
   | SVDecl of styp * string * sexpr option
+  | SFDecl of styp * string * sexpr
   | SReturn of sexpr
   | SIf of sexpr * sstmt list * sstmt list
   | SFor of (sstmt option) * (sexpr option) * (sexpr option) * sstmt list
@@ -124,6 +125,7 @@ and fmt_sstmt = function
   | SReturn(e) -> "Return " ^ (fmt_sexpr e)
   | SVDecl (t, n, l) -> (fmt_styp t) ^ " " ^ n ^ " = " ^ (match l with
         None -> "" | Some(e) -> fmt_sexpr e)
+  | SFDecl (t, n, l) -> (fmt_styp t) ^ " " ^ n ^ " = " ^ (fmt_sexpr l)
   | SFor (init, e2, e3, s) ->
     fmt_four "ForLoop"
       (match init with None -> "" | Some(s) -> fmt_sstmt s)

@@ -47,6 +47,7 @@ and bind = typ * string
 (* Statements*)
 and stmt =
 	| Expr of expr
+  | FDecl of typ * string * expr
   | VDecl of typ * string * expr option
 	| Return of expr
   | If of expr * stmt list * stmt list
@@ -118,9 +119,11 @@ let rec fmt_expr = function
   | Call(_, _) -> "Function Call"
   (* below actually is parsed with {name = e.name; param = e.params;
    * typ = e.typ; body = e.body}. See test programs for examples. *)
-  | FExpr(e) -> fmt_three "FExpr" (fmt_params e.params)
-          (fmt_typ e.typ) (fmt_stmt_list e.body)
+  | FExpr(e) -> fmt_fexpr e
   | Noexpr -> ""
+
+and fmt_fexpr e =
+  fmt_three "FExpr" (fmt_params e.params) (fmt_typ e.typ) (fmt_stmt_list e.body)
 
 and fmt_members l =
   let fmt_m = function
@@ -137,6 +140,7 @@ and fmt_stmt = function
   | Return(e) -> fmt_one "Return" (fmt_expr e)
   | VDecl (t, n, l) -> fmt_three "VDecl" (fmt_typ t) n (match l with
     None -> "" | Some(e) -> fmt_expr e)
+  | FDecl (t, n, l) -> fmt_three "FDecl" (fmt_typ t) n (fmt_expr l)
   | For (init, e2, e3, s) ->
     fmt_four "ForLoop"
     (match init with None -> "" | Some(s) -> fmt_stmt s)
