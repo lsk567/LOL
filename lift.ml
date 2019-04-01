@@ -57,6 +57,20 @@ let rec dfs_sstmt funcs env sstmt =
         parent = env.parent
       } in
       (funcs', fvs', env', SVDecl(new_typ, name, opt_sexpr'))
+    | SFDecl(lt, name, sexpr) -> (* Now no different than SVDecl*)
+    let (new_typ, funcs', fvs', opt_sexpr') =
+      let (funcs', fvs', sexpr') = dfs_sexpr funcs env sexpr ~fname:name in
+        let (rt, _) = sexpr' in
+        let new_typ = match (lt, rt) with
+            SFunc(_), SFunc(_) -> lt
+          | _ -> lt in
+        (new_typ, funcs', fvs', Some(sexpr'))
+    in
+    let env' = {
+      variables = StringMap.add name new_typ env.variables;
+      parent = env.parent
+    } in
+    (funcs', fvs', env', SVDecl(new_typ, name, opt_sexpr'))
     | SReturn e ->
       let (funcs1, fvs1, e1) = dfs_sexpr funcs env e in
       (funcs1, fvs1, env, SReturn(e1))
