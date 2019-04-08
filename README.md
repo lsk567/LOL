@@ -3,7 +3,7 @@
 
 # Requirements
 - LLVM 7.0.0 or higher
-- OCaml 4.07.01
+- OCaml 4.05.0 or higher
 - OPAM
 
 # Usage
@@ -19,6 +19,10 @@ To compile, into LLVM:
 
 `$ ./lol.native <filename>`
 
-To Compile and execute a program:
+To compile and execute a program:
 
 `$ ./run.sh <filename>`
+
+To run tests:
+
+`$ ./testall.sh`
