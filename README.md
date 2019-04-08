@@ -3,7 +3,7 @@
 
 # Requirements
 - LLVM 7.0.0 or higher
-- OCaml 4.07.01
+- OCaml 4.05.0 or higher
 - OPAM
 
 # Usage
