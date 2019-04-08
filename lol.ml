@@ -1,24 +1,34 @@
-open Ast
+(* Top-level of the MicroC compiler: scan & parse the input,
+   check the resulting AST and generate an SAST from it, generate LLVM IR,
+   and dump the module *)
 
-module StringMap = Map.Make(String)
+type action = Ast | Sast | LLVM_IR | Compile
 
-let rec eval env = function
-    Lit(x)  -> (x,env)
-  | Var(x) -> (StringMap.find x env, env)
-  | Seq(e1,e2)-> let (_,env) = eval env e1 in
-                  eval env e2
-  | Asn(v,e) -> let (vv,env) = eval env e in (vv, StringMap.add v vv env)
-  | Binop(e1, op, e2) ->
-      let (v1,env) = eval env e1 in
-      let (v2,env) = eval env e2 in
-      ((match op with
-          Add -> v1 + v2
-        | Sub -> v1 - v2
-        | Mul -> v1 * v2
-        | Div -> v1 / v2), env)
+let () =
+  let action = ref Compile in
+  let set_action a () = action := a in
+  let speclist = [
+    ("-a", Arg.Unit (set_action Ast), "Print the AST");
+    ("-s", Arg.Unit (set_action Sast), "Print the SAST");
+    ("-l", Arg.Unit (set_action LLVM_IR), "Print the generated LLVM IR");
+    ("-c", Arg.Unit (set_action Compile),
+      "Check and print the generated LLVM IR (default)");
+  ] in
+  let usage_msg = "usage: ./lol.native [-a|-s|-l|-c] [file.lol]" in
+  let channel = ref stdin in
+  Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
 
-let _ =
-  let lexbuf = Lexing.from_channel stdin in
-  let expr = Parser.expr Scanner.token lexbuf in
-  let (result,_) = eval StringMap.empty expr in
-  print_endline (string_of_int result)
+  let lexbuf = Lexing.from_channel !channel in
+  let ast = Parser.program Scanner.token lexbuf in
+  match !action with
+    Ast -> print_string (Ast.string_of_program ast)
+  | _ ->
+    let sast = Semant.check_program ast in
+    let lsast = Lift.lift sast in
+    match !action with
+      Ast     -> print_string (Ast.string_of_program ast)
+    | Sast    -> print_string (Sast.string_of_sprogram sast)
+    | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate lsast))
+    | Compile -> let m = Codegen.translate lsast in
+      Llvm_analysis.assert_valid_module m;
+      print_string (Llvm.string_of_llmodule m)
