@@ -19,6 +19,10 @@ To compile, into LLVM:
 
 `$ ./lol.native <filename>`
 
-To Compile and execute a program:
+To compile and execute a program:
 
 `$ ./run.sh <filename>`
+
+To run tests:
+
+`$ ./testall.sh`
