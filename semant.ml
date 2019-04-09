@@ -13,6 +13,7 @@ exception Undeclared_reference of string
 
 let builtins_func = [
   (* Printing *)
+  ("printhw", Func({ param_typs = [String]; return_typ = Void }));
   ("println", Func({ param_typs = [String]; return_typ = Void }));
   ("print", Func({ param_typs = [String]; return_typ = Void }));
   (* Casting *)
@@ -30,6 +31,7 @@ let builtins_func = [
 ]
 
 let builtins = [
+  ("printhw", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
   (* Printing *)
   ("println", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid;
     sbuiltin = true; }));

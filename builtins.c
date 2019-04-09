@@ -6,6 +6,12 @@
 
 #define MAXFLOATSIZE 50
 
+// experimental function that only prints "hello world"
+void printhw(char * str) {
+  printf("%s Another hello world haha!\n", str);
+  return;
+}
+
 // assumes the str that's based in is correctly null terminated
 void println(char * str){
   printf("%s\n",str);
