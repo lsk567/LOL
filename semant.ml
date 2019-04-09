@@ -12,8 +12,12 @@ exception Undeclared_reference of string
 (* Built-in Functions *)
 
 let builtins_func = [
+
+  ("gsl_test", Func({ param_typs = [String]; return_typ = Void }));
+
+  ("printhw", Func({ param_typs = [String]; return_typ = Void })); (* test *)
+
   (* Printing *)
-  ("printhw", Func({ param_typs = [String]; return_typ = Void }));
   ("println", Func({ param_typs = [String]; return_typ = Void }));
   ("print", Func({ param_typs = [String]; return_typ = Void }));
   (* Casting *)
@@ -31,7 +35,13 @@ let builtins_func = [
 ]
 
 let builtins = [
+
+  ("gsl_test", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
+
   ("printhw", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
+
+
+
   (* Printing *)
   ("println", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid;
     sbuiltin = true; }));

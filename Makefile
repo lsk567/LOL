@@ -15,8 +15,9 @@ lol.native:
 	rm -f *.o
 	ocamlbuild -use-ocamlfind -pkgs llvm lol.native
 
+# link gsl library
 builtins.o :
-	cc -c -o builtins.o builtins.c -lm
+	gcc -Wall -I/usr/local/include -c builtins.c
 
 .PHONY : clean
 clean :
