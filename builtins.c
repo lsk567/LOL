@@ -15,6 +15,11 @@ void printhw(char * str) {
   return;
 }
 
+void printnewln() {
+  printf("\n");
+  return;
+}
+
 // assumes the str that's based in is correctly null terminated
 void println(char * str){
   printf("%s\n",str);
