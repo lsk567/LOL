@@ -1,7 +1,7 @@
 ; ModuleID = 'LOL'
 source_filename = "LOL"
 
-@str = private unnamed_addr constant [4 x i8] c"foo\00", align 1
+@str = private unnamed_addr constant [3 x i8] c"hi\00", align 1
 @str.1 = private unnamed_addr constant [9 x i8] c"success!\00", align 1
 
 declare void @gsl_test(i8*)
@@ -38,7 +38,7 @@ entry:
   %main = bitcast i8* %malloccall1 to { i32 ()*, i8* }*
   %tmp__ = insertvalue { i32 ()*, i8* } { i32 ()* @main, i8* null }, i8* %env_p, 1
   store { i32 ()*, i8* } %tmp__, { i32 ()*, i8* }* %main
-  call void @gsl_test(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @str, i32 0, i32 0))
+  call void @gsl_test(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @str, i32 0, i32 0))
   call void @println(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @str.1, i32 0, i32 0))
   ret i32 0
 }

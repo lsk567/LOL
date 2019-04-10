@@ -12,7 +12,8 @@ exception Undeclared_reference of string
 (* Built-in Functions *)
 
 let builtins_func = [
-
+  (* gsl function test *)
+  (* ("gsl_test", Func({ param_typs = [Void]; return_typ = Void })); *) (* An attempt to test void param *)
   ("gsl_test", Func({ param_typs = [String]; return_typ = Void }));
 
   ("printhw", Func({ param_typs = [String]; return_typ = Void })); (* test *)
@@ -36,6 +37,7 @@ let builtins_func = [
 
 let builtins = [
 
+  (* ("gsl_test", SFunc({ sparam_typs = [SVoid]; sreturn_typ = SVoid; sbuiltin = true; })); *)
   ("gsl_test", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
 
   ("printhw", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
@@ -257,6 +259,9 @@ and check_expr (ctxt : styp StringMap.t list) = function
             if compare_typs p_typ styp
               then helper ((styp,sx)::l) (pl, al)
               else raise (Failure "argument type mismatch")
+              (* else raise (Failure (Sast.get_styp styp)) *) (* Use this to detect the stype *)
+          (* | (p_typ::pl, []) -> print_endline ( Sast.get_styp p_typ ); raise (Failure "arg list empty!") *)
+          (* | ([], _::_) -> raise (Failure "p_typ list empty!") *)
           | _ -> raise (Failure "invalid number of arguments")
         in helper [] (f_type.sparam_typs, args)
       in

@@ -63,6 +63,18 @@ and sstmt =
 (* program *)
 type sprogram = sstmt list
 
+(* investigating why void param returns error,
+this helper function gets type of input *)
+let get_styp = function
+    SInt -> "SInt"
+  | SFloat -> "SFloat"
+  | SBool -> "SBool"
+  | SString -> "SString"
+  | SVoid -> "SVoid"
+  | SFunc(f) -> "SFunc"
+  | SABSTRACT -> "SABSTRACT"
+  | SAny -> "SAny"
+
 (* Pretty printing *)
 
 let string_of_sstmt = function

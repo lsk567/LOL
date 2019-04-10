@@ -1,2 +1,2 @@
-gsl_test("foo");
+gsl_test("hi");
 println("success!");

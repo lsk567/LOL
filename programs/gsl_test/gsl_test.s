@@ -26,7 +26,7 @@ _main:                                  ## @main
                                         ## -- End function
 	.section	__TEXT,__cstring,cstring_literals
 L_str:                                  ## @str
-	.asciz	"foo"
+	.asciz	"hi"
 
 L_str.1:                                ## @str.1
 	.asciz	"success!"
