@@ -24,6 +24,7 @@ rule token = parse
 | '+'                  { PLUS }
 | '-'                  { MINUS }
 | '*'                  { TIMES }
+| '^'                  { POW }
 | '/'                  { DIVIDE }
 | '%'                  { MOD }
 | '@'                  { OUTER }
