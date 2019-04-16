@@ -8,20 +8,24 @@
 # to test linking external code
 
 .PHONY : all
-all : lol.native builtins.o
+all : lol.native builtins.o builtins.bc
 
 .PHONY : lol.native
 lol.native:
 	rm -f *.o
-	ocamlbuild -use-ocamlfind -pkgs llvm lol.native
+	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis,llvm.bitreader -cflags -w,+a-4 lol.native
 
 builtins.o :
-	cc -c -o builtins.o builtins.c -lm
+	gcc -c builtins.c
+
+builtins.bc:
+	clang -emit-llvm -c builtins.c -o builtins.bc -Wno-varargs
 
 .PHONY : clean
 clean :
 	ocamlbuild -clean
 	rm -rf lol.native scanner.ml parser.ml parser.mli
+	rm -rf builtins.bc
 	rm -rf *.cmx *.cmi *.cmo *.cmx *.o *.s *.ll *.out *.exe
 
 # More detailed: build using ocamlc/ocamlopt + ocamlfind to locate LLVM

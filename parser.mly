@@ -3,7 +3,7 @@
   module StringMap = Map.Make (String)
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE
+%token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR
 %token QUOTE COMMA DOT
 %token PLUS MINUS TIMES DIVIDE MOD OUTER POW ASSIGN
@@ -43,44 +43,49 @@ stmt_list:
 
 stmt:
     expr SEMI                               { Expr($1)              } /* x = 3; */
+  | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   /* Declarations */
-  | typ ID init_opt SEMI                    { VDecl ($1,$2,$3) } /* Initialize variables. Can have default init. */
-  | fun_decl                                { $1 }
-  | RETURN noexpr_expr SEMI                 { Return($2) } /*  Return a value */
+  | typ ID init_opt SEMI                    { Decl ($1,$2,$3) } /* Initialize variables. Can have default init. */
+  | fun_decl                                { $1 } /* Function Declaration */
+  | RETURN expr_opt SEMI                    { Return($2) } /*  Return a value */
   /* Control Flows */
-  | IF LPAREN expr RPAREN LBRACE stmt_list RBRACE false_branch
-                                            { If($3, List.rev $6, $8) } /* If, else, elif stuff */
-  | FOR LPAREN loop_init_opt SEMI expr_opt SEMI expr_opt RPAREN LBRACE stmt_list RBRACE
-                                            { For($3, $5, $7, List.rev $10) } /* For loop; for (;;) */
-  | WHILE LPAREN expr_opt RPAREN LBRACE stmt_list RBRACE
-                                            { For(None, $3, None, List.rev $6) } /* While loop, can be treated as a for loop */
+  | IF LPAREN expr RPAREN stmt false_branch
+                                            { If($3, $5, $6) } /* If, else, elif stuff */
+  | FOR LPAREN expr_opt SEMI expr_opt SEMI expr_opt RPAREN stmt
+                                            { For($3, $5, $7, $9) } /* For loop; for (;;) */
+  | WHILE LPAREN expr RPAREN stmt           { While($3, $5) } /* While loop, can be treated as a for loop */
 
 fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
   FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-    { FDecl( Func({ param_typs = List.map (fun (ty, _) -> ty) $5; return_typ = $2 }),
-      $3, FExpr({ typ = $2; name = $3; params = $5; body = List.rev $8 }))}
+    { Decl( Func({ param_typs = List.map (fun (ty, _) -> ty) $5; return_typ = $2 }),
+      $3, Some(FExpr({ typ = $2; params = $5; body = List.rev $8 })))}
 
 /* if stuff */
-false_branch: elif { $1 } | cf_else { $1 } | %prec NOELSE { [] }
+false_branch:
+    elif { $1 }
+  | cf_else { $1 }
+  | %prec NOELSE { Block([]) }
 
 elif:
-ELIF LPAREN expr RPAREN LBRACE stmt_list RBRACE false_branch
-    { [If($3, List.rev $6, $8)] }
+  ELIF LPAREN expr RPAREN stmt false_branch { If($3, $5, $6) }
 
 cf_else:
-ELSE LBRACE stmt_list RBRACE { List.rev $3 }
+  ELSE stmt { $2 }
 
 /* Expressions */
 expr:
   /* Accesors */
-    accessor         { $1                     }
-  /* Assignmnent */
-  | expr ASSIGN expr { Assign($1, $3)         }
-  /* Binop */
+    accessor  {$1}
+  /* Arithmeics */
+  | MINUS expr %prec NOT { Unop(Neg, $2)      }
+  | NOT expr             { Unop(Not, $2)      }
   | expr PLUS   expr { Binop($1, Add, $3)     }
   | expr MINUS  expr { Binop($1, Sub, $3)     }
   | expr TIMES  expr { Binop($1, Mul, $3)     }
   | expr DIVIDE expr { Binop($1, Div, $3)     }
+  | expr MOD    expr   { Binop($1, Mod,   $3) }
+  | expr POW    expr   { Binop($1, Pow,   $3) }
+  | expr OUTER    expr { Binop($1, Outer, $3) }
   | expr EQ     expr { Binop($1, Equal, $3)   }
   | expr NEQ    expr { Binop($1, Neq,   $3)   }
   | expr LT     expr { Binop($1, Less,  $3)   }
@@ -89,23 +94,41 @@ expr:
   | expr GEQ    expr { Binop($1, Geq,   $3)   }
   | expr AND    expr { Binop($1, And,   $3)   }
   | expr OR     expr { Binop($1, Or,    $3)   }
-  /* Unnop */
-  | MINUS expr %prec NOT { Unop(Neg, $2)      }
-  | NOT expr             { Unop(Not, $2)      }
-  /* Brackets for precedence */
-  | LPAREN expr RPAREN   { $2                 }
 
+  /* Assignmnent */
+  | ID ASSIGN expr    { Assign(Id($1), NoOp,$3)      }
+  | ID PLUSASN   expr { Assign(Id($1), Add, $3) }
+  | ID MINUSASN  expr { Assign(Id($1), Sub, $3) }
+  | ID TIMESASN  expr { Assign(Id($1), Mul, $3)}
+  | ID DIVIDEASN expr { Assign(Id($1), Div, $3) }
+  | ID MODASN    expr { Assign(Id($1), Mod, $3) }
+  | ID INC            { Assign(Id($1), Add, IntLit(1)) }
+  | ID DEC            { Assign(Id($1), Sub, IntLit(1)) }
+
+  /*List*/
+  | LSQBRACE opt_items RSQBRACE { ListLit($2) }
+  | accessor                { $1 }
+  | accessor ASSIGN expr    { Assign($1, NoOp, $3) }
+  | accessor PLUSASN expr   { Assign($1, Add, $3) }
+  | accessor MINUSASN expr  { Assign($1, Sub, $3) }
+  | accessor TIMESASN expr  { Assign($1, Mul, $3) }
+  | accessor DIVIDEASN expr { Assign($1, Div, $3) }
+  | accessor MODASN expr    { Assign($1, Mod, $3) }
+  /* Brackets for precedence */
+  | LPAREN expr RPAREN   { $2 }
+
+/* Accesors, helpful for recursive case */
 accessor:
     accessor LPAREN args_opt RPAREN { Call($1, $3)  } /* fun(x) */
+  | accessor LSQBRACE expr RSQBRACE { ListAccess($1, $3) }
   | atom { $1 }
 
 atom:
-  /* atomic units*/
     INTLIT           { IntLit ($1) }
   | FLOATLIT	       { FloatLit($1) }
   | BOOLLIT          { BoolLit($1) }
   | STRLIT           { StrLit($1) }
-  | ID               { Id($1) }
+  | ID                { Id($1) }
 
 /* Types */
 ret_typ:
@@ -117,20 +140,42 @@ typ:
   | FLOAT { Float }
   | BOOL { Bool }
   | STRING { String }
+  | VOID   { Void }
+  | func_type  { Func($1) }
+  | LIST LT typ GT { List($3)}
+  | TENSOR { Tensor }
+
+/* This is the type for Func with the syntax
+func (parameter_type1, parameter_type2; return_type) */
+func_type:
+      FUNC ret_typ LPAREN typ_opt RPAREN
+      { { param_typs = $4;
+          return_typ = $2 } }
 
 /* Helpers */
+typ_opt:
+  { [] }
+| typ_list { List.rev $1 }
+
+typ_list:
+  typ { [$1] }
+| typ_list COMMA typ { $3 :: $1 }
+
+opt_items:
+  /* nothing */ { [] }
+| item_list { List.rev $1 }
+
+item_list:
+  expr { [$1] }
+| item_list COMMA expr {$3 :: $1}
 
 init_opt:
   /* nothing */ { None }
 | ASSIGN expr   { Some($2) }
 
-noexpr_expr:
+expr_opt:
   /* nothing */ { Noexpr }
 | expr          { $1 }
-
-expr_opt:
-/* nothing */   { None }
-| expr          { Some($1) }
 
 params_opt:
   /* nothing */ { [] }
@@ -140,13 +185,8 @@ param_list:
   typ ID { [($1, $2)] }
 | param_list COMMA typ ID { ($3, $4) :: $1 }
 
-loop_init_opt:
-  /* nothing */{ None }
-| expr { Some(Expr($1)) }
-| typ ID ASSIGN expr { Some(VDecl($1, $2, Some($4))) }
-
 args_opt:
-  { [] }
+  /* nothing */ { [] }
 | arg_list { List.rev $1 }
 
 arg_list:
