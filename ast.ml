@@ -84,6 +84,9 @@ let rec string_of_typ = function
   | Float -> "float"
   | Bool -> "bool"
   | String -> "string"
+  | List typ -> "list(" ^ (string_of_typ typ) ^ ")"
+  | Empty -> "empty"
+  | Tensor -> "tensor"
 
 and string_of_typ_list l =
   let typs = List.map string_of_typ l in
@@ -133,6 +136,10 @@ let rec string_of_expr = function
    * typ = e.typ; body = e.body}. See test programs for examples. *)
   | FExpr(e) -> fmt_fexpr e
   | Noexpr -> ""
+  (* List *)
+  | ListLit(expr_l) -> fmt_one "ListLit" (fmt_list (List.map string_of_expr expr_l))
+  | ListAccess(e1,e2) -> fmt_two "ListAccess" (string_of_expr e1) (string_of_expr e2)
+  | ListLength(e) -> fmt_one "ListLength" (string_of_expr e)
 
 and fmt_fexpr e =
   fmt_three "FExpr" (fmt_params e.params) (string_of_typ e.typ) (string_of_stmt_list e.body)
@@ -166,7 +173,6 @@ and string_of_stmt = function
     fmt_two "WhileLoop" (string_of_expr e) (string_of_stmt s)
   | If(e, tL, fL) -> fmt_three "If" (string_of_expr e) (string_of_stmt tL)
     (string_of_stmt fL)
-
 
 let string_of_program ast =
   string_of_stmt_list ast

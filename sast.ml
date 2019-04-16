@@ -104,7 +104,9 @@ let rec string_of_styp = function
   | SFloat -> "sfloat"
   | SBool -> "sbool"
   | SString -> "sstring"
-
+  | SList styp -> "slist(" ^ (string_of_styp styp) ^ ")"
+  | SEmpty -> "sempty"
+  | STensor -> "tensor"
 let fmt_sparams l =
   let fmt_p = function
       (t, n) -> String.concat "" ["("; string_of_styp t; ", "; n; ")"] in
@@ -131,6 +133,9 @@ let rec string_of_sexpr (_,s) =
                         (fmt_list (List.map (fun (t, n) -> string_of_styp t ^ " " ^ n)
                         clsr.free_vars))
    | SNoexpr -> ""
+   (* List *)
+   | SListLit(sexpr_list) -> fmt_one "ListLit" (fmt_list (List.map string_of_sexpr sexpr_list))
+   | SListAccess(s1,s2) -> fmt_two "ListAccess" (string_of_sexpr s1) (string_of_sexpr s2)
   )
 
 and fmt_smembers l =
@@ -155,7 +160,7 @@ and fmt_sstmt = function
   | SWhile (e,s) -> fmt_two "while" (string_of_sexpr e) (string_of_sstmt s)
   | SIf(e, tL, fL) -> fmt_three "If" (string_of_sexpr e) (fmt_sstmt tL)
                         (fmt_sstmt fL)
-  | SBlock(_) -> "SVBlock"
+  | SBlock(sstmt_list) -> fmt_one "SVBlock" (fmt_list (List.map fmt_sstmt sstmt_list))
 
 and fmt_sstmt_list ?spacer l =
   let sstmts = List.map fmt_sstmt l in

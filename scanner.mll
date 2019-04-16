@@ -61,6 +61,8 @@ rule token = parse
 | "void"               { VOID }
 | "AND"                { AND }
 | "OR"                 { OR }
+| "List"               { LIST }
+| "Tensor"             { TENSOR }
 | "true"|"false" as lxm           { BOOLLIT(bool_of_string lxm)  }
 | digits as lxm                   { INTLIT(int_of_string lxm) }
 | digits '.'  digit* ( ['e' 'E'] ['+' '-']? digits )? as lxm { FLOATLIT(lxm) }

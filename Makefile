@@ -8,7 +8,7 @@
 # to test linking external code
 
 .PHONY : all
-all : lol.native builtins.o builtins.bc
+all : lol.native builtins.o
 
 .PHONY : lol.native
 lol.native:
@@ -17,9 +17,8 @@ lol.native:
 
 builtins.o :
 	gcc -c builtins.c
+	clang -emit-llvm -o builtins.bc -c builtins.c -Wno-varargs
 
-builtins.bc:
-	clang -emit-llvm -c builtins.c -o builtins.bc -Wno-varargs
 
 .PHONY : clean
 clean :

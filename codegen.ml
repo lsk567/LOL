@@ -243,7 +243,7 @@ let translate functions =
         (match snd e1 with
             SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
          | _ -> raise (Failure ("assignment for " ^ (string_of_sexpr e2)
-                ^ "not implemented in codegen")))
+                ^ "SASSign not implemented in codegen")))
       | SBinop (e1, op, e2) ->
           let (t, _) = e1
           and e1' = expr builder m e1
@@ -350,8 +350,35 @@ let translate functions =
         let result =
             (match func_t.sreturn_typ with SVoid -> "" | _ -> "_result") in
         L.build_call func_ptr (Array.of_list llargs) result builder
+    (* List *)
+    | SListLit(contents) ->
+      let rec list_fill m lst = (function
+          [] -> lst
+        | sx :: rest ->
+          let (typ, _) = sx in
+          let data = (match typ with
+            SList _  -> expr builder m sx
+          | _ -> let data = L.build_malloc (ltype_of_styp typ) "data" builder in
+              let llvalue = expr builder m sx
+              in ignore (L.build_store llvalue data builder); data)
+          in
+          let data = L.build_bitcast data void_ptr_t "data" builder in
+          ignore (
+            let append_f = L.lookup_function "list_append" llm in
+            match append_f with
+                None -> raise (Failure "list_append not defined")
+              | Some(append_f) -> L.build_call append_f [| lst; data |] "list_append" builder);
+                                  list_fill m lst rest)
+      in
+      let list_init_f = L.lookup_function "list_init" llm in
+      (match list_init_f with
+          None -> raise (Failure "list_init not defined")
+        | Some(list_init_f) ->
+          (let lst = L.build_call list_init_f [||] "list_init" builder in
+          ignore(list_fill m lst contents);
+          lst))
     | _ as x -> print_endline(string_of_sexpr (ty, x));
-        raise (Failure "not implemented in codegen")
+        raise (Failure "expr not implemented in codegen")
     in
     let add_terminal builder instr =
       match L.block_terminator (L.insertion_block builder) with
@@ -458,7 +485,7 @@ let translate functions =
       (* Implement for loops as while loops! *)
       | SFor (e1, e2, e3, body) -> stmt builder m
             ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
-    | _ -> raise (Failure "not implemented in codegen")
+    | _ -> raise (Failure "func stmt not implemented in codegen")
 
   in
 

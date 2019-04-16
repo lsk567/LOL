@@ -50,7 +50,7 @@ let check statements =
         let infer_func = { sreturn_typ = same_ret; sparam_typs = same_args } in
         SFunc (infer_func)
       (* List *)
-      | (SList _, SList SEmpty) -> lt
+      | (SList _, SEmpty) -> lt
       | (SList t1, SList t2) -> SList (infer_typ t1 t2)
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
@@ -137,7 +137,7 @@ and check_expr symbol_table ?fname = function
        | _ -> raise (Failure ("illegal unary operator " ^ string_of_uop op ^ " " ^ string_of_styp t ^
       " in " ^ string_of_expr ex))), SUnop(op, (t, e')) )
   (* List *)
-  | ListLit(l) -> (check_list_type symbol_table l,  SListLit (List.map (check_expr symbol_table) l))
+  | ListLit(l) -> (SList (check_list_type symbol_table l),  SListLit (List.map (check_expr symbol_table) l))
   | ListAccess(e1,e2) ->
     let (t1, se1) = check_expr symbol_table e1
     and (t2, se2) = check_expr symbol_table e2
@@ -167,7 +167,8 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       | Some(e) ->
       let (t',e') = match t with
           Func _ -> check_expr symbol_table e ~fname:s
-        | _ -> check_expr symbol_table e in
+        | _ -> check_expr symbol_table e
+      in
       if StringMap.mem s built_in_decls
       then raise (Failure ("Variable name cannot be a built-in function" ^ (string_of_stmt exp)))
       else let ty = match t with
