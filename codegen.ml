@@ -81,6 +81,7 @@ let translate functions =
     | SString -> str_t
     | SList _ -> list_t
     | SFunc(ftype) -> ltype_of_clsr_func "" ftype
+    | SEmpty -> void_t
     | _ -> raise (Failure "not yet implemented")
 
   in
@@ -106,6 +107,10 @@ let translate functions =
       StringMap.add name (ty, (L.declare_function name ltype the_module)) m
     ) StringMap.empty Builtins.builtins in
 
+  let list_init_t = L.function_type list_t [||] in
+  let list_init_f = L.declare_function "list_init" list_init_t the_module in
+  let list_append_t = L.function_type lst_element_t [| list_t; void_ptr_t |] in
+  let list_append_f = L.declare_function "list_append" list_append_t the_module in
   (*
   Define each function (arguments and return type) so we can
   call it even before we've created its body
@@ -363,20 +368,11 @@ let translate functions =
               in ignore (L.build_store llvalue data builder); data)
           in
           let data = L.build_bitcast data void_ptr_t "data" builder in
-          ignore (
-            let append_f = L.lookup_function "list_append" llm in
-            match append_f with
-                None -> raise (Failure "list_append not defined")
-              | Some(append_f) -> L.build_call append_f [| lst; data |] "list_append" builder);
-                                  list_fill m lst rest)
+                    ignore (L.build_call list_append_f [| lst; data |] "list_append" builder);
+                    list_fill m lst rest)
       in
-      let list_init_f = L.lookup_function "list_init" llm in
-      (match list_init_f with
-          None -> raise (Failure "list_init not defined")
-        | Some(list_init_f) ->
-          (let lst = L.build_call list_init_f [||] "list_init" builder in
-          ignore(list_fill m lst contents);
-          lst))
+      let lst = L.build_call list_init_f [||] "list_init" builder in
+            ignore(list_fill m lst contents); lst
     | _ as x -> print_endline(string_of_sexpr (ty, x));
         raise (Failure "expr not implemented in codegen")
     in
@@ -408,7 +404,7 @@ let translate functions =
       | SExpr e -> let _ = expr builder m e in (builder, m)
       (* Right now SVDecl and SFDecl has no difference except se is optional for VDecl*)
       | SDecl(t, n, se) ->
-        let se' = expr builder m se in
+        let se' = Printf.printf "%s" (string_of_sexpr se); expr builder m se in
         let alloc_clsr clsr =
           let func_name = ("f" ^ (string_of_int clsr.ind)) in
           let (_, lfexpr) = StringMap.find func_name function_decls in
@@ -485,7 +481,7 @@ let translate functions =
       (* Implement for loops as while loops! *)
       | SFor (e1, e2, e3, body) -> stmt builder m
             ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
-    | _ -> raise (Failure "func stmt not implemented in codegen")
+    | _ -> raise (Failure "stmt not implemented in codegen")
 
   in
 

@@ -141,6 +141,7 @@ typ:
   | BOOL { Bool }
   | STRING { String }
   | VOID   { Void }
+  | FUNC {Function} /* Anonymous functions */
   | func_type  { Func($1) }
   | LIST LT typ GT { List($3)}
   | TENSOR { Tensor }
@@ -148,9 +149,7 @@ typ:
 /* This is the type for Func with the syntax
 func (parameter_type1, parameter_type2; return_type) */
 func_type:
-      FUNC ret_typ LPAREN typ_opt RPAREN
-      { { param_typs = $4;
-          return_typ = $2 } }
+    FUNC ret_typ LPAREN typ_opt RPAREN { { param_typs = $4; return_typ = $2 } }
 
 /* Helpers */
 typ_opt:

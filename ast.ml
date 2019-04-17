@@ -9,6 +9,7 @@ type typ =
   | String
   | Void
   | Func of func_typ
+  | Function (* Anoynmous function *)
   | List of typ
   | Empty
   | Tensor

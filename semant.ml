@@ -78,8 +78,8 @@ and check_expr symbol_table ?fname = function
         ( [] , map', Some (styp_of_typ fn.typ)) fn.body in
     (* Check return. If it is of type function, search type from statments*)
     let get_ret t = match t with
-        Func _ -> (styp_of_typ t)
-      | _ ->
+        (* Anoynmous function need to check later*)
+        Func _ ->
         (* Helper function for finding the return type from statment*)
         let rec ret_search x stmt= match stmt with
           SBlock stlst -> List.fold_left ret_search x stlst
@@ -89,9 +89,11 @@ and check_expr symbol_table ?fname = function
           | SWhile (_,s) -> ret_search x s
           | _ -> x
         in
-        List.fold_left ret_search SEmpty istmt
+        List.fold_left ret_search SVoid istmt
+      | _ -> (styp_of_typ t)
     in
-    let sty = get_ret fn.typ in
+    let sty = get_ret fn.typ
+    in
     (SFunc(empty_func SVoid), SFExpr ({
       styp = sty;
       sparams = List.map (fun (xtyp, str) -> (styp_of_typ xtyp,str)) fn.params;
@@ -166,7 +168,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
           (SDecl (ty, s, (SEmpty,SNoexpr))::curr_lst, StringMap.add s ty symbol_table,return_typ)
       | Some(e) ->
       let (t',e') = match t with
-          Func _ -> check_expr symbol_table e ~fname:s
+          Function | Func _ -> check_expr symbol_table e ~fname:s
         | _ -> check_expr symbol_table e
       in
       if StringMap.mem s built_in_decls
