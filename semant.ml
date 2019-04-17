@@ -50,7 +50,7 @@ let check statements =
         let infer_func = { sreturn_typ = same_ret; sparam_typs = same_args } in
         SFunc (infer_func)
       (* List *)
-      | (SList _, SEmpty) -> lt
+      | (_, SEmpty) -> lt
       | (SList t1, SList t2) -> SList (infer_typ t1 t2)
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
