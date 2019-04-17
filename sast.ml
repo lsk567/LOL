@@ -13,6 +13,9 @@ type styp =
   | SEmpty
   | STensor
   | SABSTRACT
+  (* Types only used for builtin fillers*)
+  | SAny
+  | SListElement of styp
 
 and sfunc_typ = {
   sparam_typs: styp list;

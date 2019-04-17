@@ -20,4 +20,9 @@ let builtins = [
 
   ("string_concat", SFunc({ sparam_typs = [SString; SString]; sreturn_typ = SString }));
   ("string_equals", SFunc({ sparam_typs = [SString; SString]; sreturn_typ = SInt }));
+
+  (* List functions *)
+  ("list_init", SFunc({sparam_typs= []; sreturn_typ = SList (SAny) }));
+  ("list_init", SFunc({sparam_typs= [SList (SAny); SAny]; sreturn_typ = SListElement (SAny) }));
+
 ]

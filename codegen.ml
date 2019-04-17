@@ -79,10 +79,18 @@ let translate functions =
     | SFloat -> float_t
     | SVoid  -> void_t
     | SString -> str_t
-    | SList _ -> list_t
     | SFunc(ftype) -> ltype_of_clsr_func "" ftype
     | SEmpty -> void_t
+    | SList _ -> list_t
+    | SListElement _ -> lst_element_t
+    | SAny -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
+
+  (* Helper funciton to retrieve a function from context*)
+  and get_func s lmodule =
+    match L.lookup_function s lmodule with
+        None -> raise( Failure (s ^ "not defined in builtin"))
+      | Some f -> f
 
   in
 
@@ -107,10 +115,6 @@ let translate functions =
       StringMap.add name (ty, (L.declare_function name ltype the_module)) m
     ) StringMap.empty Builtins.builtins in
 
-  let list_init_t = L.function_type list_t [||] in
-  let list_init_f = L.declare_function "list_init" list_init_t the_module in
-  let list_append_t = L.function_type lst_element_t [| list_t; void_ptr_t |] in
-  let list_append_f = L.declare_function "list_append" list_append_t the_module in
   (*
   Define each function (arguments and return type) so we can
   call it even before we've created its body
@@ -367,10 +371,12 @@ let translate functions =
               let llvalue = expr builder m sx
               in ignore (L.build_store llvalue data builder); data)
           in
+          let list_append_f = get_func "list_append" the_module in
           let data = L.build_bitcast data void_ptr_t "data" builder in
                     ignore (L.build_call list_append_f [| lst; data |] "list_append" builder);
                     list_fill m lst rest)
       in
+      let list_init_f = get_func "list_init" the_module in
       let lst = L.build_call list_init_f [||] "list_init" builder in
             ignore(list_fill m lst contents); lst
     | _ as x -> print_endline(string_of_sexpr (ty, x));
