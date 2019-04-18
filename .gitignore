@@ -1,0 +1,4 @@
+/_build
+/.vscode
+/builtins.o
+/lol.native
