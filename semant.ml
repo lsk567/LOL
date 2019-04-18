@@ -18,8 +18,9 @@ let builtins_func = [
 
   ("printhw", Func({ param_typs = [String]; return_typ = Void })); (* test *)
 
+  ("printnewln", Func({ param_typs = [String]; return_typ = Void }));
+
   (* Printing *)
-  ("printnewln", Func({ param_typs = [Void]; return_typ = Void }));
   ("println", Func({ param_typs = [String]; return_typ = Void }));
   ("print", Func({ param_typs = [String]; return_typ = Void }));
   (* Casting *)
@@ -43,10 +44,10 @@ let builtins = [
 
   ("printhw", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
 
+  ("printnewln", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid; sbuiltin = true; }));
 
 
   (* Printing *)
-  ("printnewln", SFunc({ sparam_typs = [SVoid]; sreturn_typ = SVoid; sbuiltin = true; }));
   ("println", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid;
     sbuiltin = true; }));
   ("print", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid;
