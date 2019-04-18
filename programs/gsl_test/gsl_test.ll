@@ -8,6 +8,8 @@ declare void @gsl_test(i8*)
 
 declare void @printhw(i8*)
 
+declare void @printnewln(i8*)
+
 declare void @println(i8*)
 
 declare void @print(i8*)

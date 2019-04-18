@@ -3,7 +3,11 @@ source_filename = "LOL"
 
 @str = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 
+declare void @gsl_test(i8*)
+
 declare void @printhw(i8*)
+
+declare void @printnewln(i8*)
 
 declare void @println(i8*)
 
