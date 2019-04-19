@@ -1,7 +1,3 @@
 /_build
 /.vscode
-/builtins.o
-/lol.native
 /programs/.vscode
-**/*.ll
-**/*.s
