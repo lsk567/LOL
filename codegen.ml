@@ -83,6 +83,7 @@ let translate functions =
     | SEmpty -> void_t
     | SList _ -> list_t
     | SListElement _ -> lst_element_t
+    
     | SAny -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
 
@@ -383,6 +384,14 @@ let translate functions =
       let list_init_f = get_func "list_init" the_module in
       let lst = L.build_call list_init_f [||] "list_init" builder in
             ignore(list_fill m lst contents); lst
+    | SListAccess(arr, i) ->
+      let arr_var = expr builder m arr in
+      let idx = expr builder m i in 
+      let ptr = 
+        L.build_load (L.build_gep arr_var 
+                        [| idx |] "" builder) 
+          "" builder 
+      in ptr
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in
