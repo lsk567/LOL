@@ -205,16 +205,15 @@ let translate functions =
   in
 
   (* Builder *)
-  let rec expr builder (m : (styp * L.llvalue) StringMap.t) ((ty, e) : sexpr) =
+  let rec expr builder (m : (styp * L.llvalue) StringMap.t) ((styp, e) : sexpr) =
 
-    let lookup n =
-      let (_, llval) = try StringMap.find n m with
-          Not_found ->
-          if StringMap.mem n builtins then StringMap.find name builtins
-          else raise (Failure ("Codegen Variable not found: " ^ n))
-      in llval
+    let lookup_both n = try StringMap.find n m with
+       Not_found -> raise (Failure ("Variable not found: " ^ n)) in
+    let lookup n = let (_, llval) = try StringMap.find n m with
+       Not_found -> raise (Failure ("Variable not found: " ^ n)) in llval
     in
 
+    (* Helper function for closure*)
     let build_clsr clsr =
       let fvs = List.map snd clsr.free_vars in
       let llfvs = List.map lookup fvs in
@@ -232,27 +231,33 @@ let translate functions =
       let func_name = "f" ^ (string_of_int clsr.ind) in
       let (llfunc, sfexpr) = StringMap.find func_name function_decls in
       let llclosure_struct_t = ltype_of_clsr func_name sfexpr in
-      let clsr_val = List.fold_left2
-          (insert_value builder)
-          (L.const_null llclosure_struct_t)
-          [0;1]
-          [llfunc; env_struct_p]
-      in clsr_val
+      let clsr_val = List.fold_left2 (insert_value builder)
+      (L.const_null llclosure_struct_t) [0;1] [llfunc; env_struct_p] in
+      clsr_val
     in
 
     match e with
-        SStrLit s -> L.build_global_stringptr s "str" builder
-      | SIntLit x -> L.const_int i32_t x
+        SIntLit x -> L.const_int i32_t x
       | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
+      | SStrLit s -> L.build_global_stringptr s "str" builder
       | SFloatLit x -> L.const_float_of_string float_t x
       | SId s -> L.build_load (lookup s) s builder
+      | SClosure clsr -> build_clsr clsr
       | SNoexpr -> L.const_int i32_t 0
       | SAssign(e1, op, e2) ->
-        let new_v = expr builder m e2 in
-        (match snd e1 with
+        let new_v = match op with
+                  NoOp -> expr builder m e2
+                | Add -> expr builder m (styp, SBinop(e1, Add, e2))
+                | Sub -> expr builder m (styp, SBinop(e1, Sub, e2))
+                | Mul -> expr builder m (styp, SBinop(e1, Mul, e2))
+                | Div -> expr builder m (styp, SBinop(e1, Div, e2))
+                | _ -> raise (Failure (string_of_op op ^ " not yet implemented"))
+        in
+        (match (snd e1) with
             SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
+         (* NEED LIST ACCESS IMPLEMENTATION *)
          | _ -> raise (Failure ("assignment for " ^ (string_of_sexpr e2)
-                ^ "SASSign not implemented in codegen")))
+                ^ "SAssign not implemented in codegen")))
       | SBinop (e1, op, e2) ->
           let (t, _) = e1
           and e1' = expr builder m e1
@@ -315,6 +320,7 @@ let translate functions =
                    | _ -> raise (Failure ("operation " ^ (string_of_op op)
                                           ^ " not implemented for type "
                                           ^ (string_of_styp t))))
+               (* NEED STRING IMPLEMENTATION *)
                | _ -> (match op with
                      Equal -> (L.build_icmp L.Icmp.Eq) e1' e2' "tmp" builder
                    | Neq -> (L.build_icmp L.Icmp.Ne) e1' e2' "tmp" builder
@@ -332,8 +338,6 @@ let translate functions =
        | _ -> raise (Failure ("operation " ^ (string_of_uop op) ^
                               " not implemented for type "
                               ^ (string_of_styp t)))) e' "tmp" builder
-
-    | SClosure clsr -> build_clsr clsr
     | SCall((t, SId(name)), args) when StringMap.mem name builtins ->
         (let func_t = match t with
               SFunc(func_t) -> func_t
@@ -379,114 +383,112 @@ let translate functions =
       let list_init_f = get_func "list_init" the_module in
       let lst = L.build_call list_init_f [||] "list_init" builder in
             ignore(list_fill m lst contents); lst
-    | _ as x -> print_endline(string_of_sexpr (ty, x));
+    | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
-    in
-    let add_terminal builder instr =
-      match L.block_terminator (L.insertion_block builder) with
+  in
+  (* Each basic block in a program ends with a "terminator" instruction i.e.
+  one that ends the basic block. By definition, these instructions must
+  indicate which basic block comes next -- they typically yield "void" value
+  and produce control flow, not values *)
+  (* Invoke "instr builder" if the current block doesn't already
+     have a terminator (e.g., a branch). *)
+  let add_terminal builder instr =
+    match L.block_terminator (L.insertion_block builder) with
         None -> ignore (instr builder)
       | Some _ -> ()
-    in
+  in
 
-    (*
-    Build the code for the given statement; return the builder for
-    the statement's successor
+  (* Build the code for the given statement; return the builder for
+     the statement's successor (i.e., the next instruction will be built
+     after the one generated by this call) *)
+  (* Imperative nature of statement processing entails imperative OCaml *)
+  let rec stmt builder m = function
+    (* Throw away the scope generated by block
+    * since the block should not be modifying our current scope *)
+      SBlock s1 ->
+      let helper (bldr, map) = stmt bldr map in
+      let (b, _) = List.fold_left helper (builder, m) s1 in
+      (b, m)
+    | SExpr e -> let _ = expr builder m e in (builder, m)
+    (* Right now SVDecl and SFDecl has no difference except se is optional for VDecl*)
+    | SDecl(t, n, se) ->
+      let se' = expr builder m se in
+      let alloc_clsr clsr =
+        let func_name = ("f" ^ (string_of_int clsr.ind)) in
+        let (_, lfexpr) = StringMap.find func_name function_decls in
+        let func_t = L.pointer_type (ltype_of_lfexpr func_name lfexpr) in
+        let llclosure_struct_t = L.struct_type context [|func_t; void_ptr_t|] in
+        L.build_malloc llclosure_struct_t n builder
+      in
+      let (_, ex) = se in
+      let local_var = match ex with
+          SClosure(clsr) -> alloc_clsr clsr
+        | _ -> L.build_malloc (ltype_of_styp t) n builder
+      in
+      let m' = StringMap.add n (t, local_var) m  in
+      let _ = L.build_store se' local_var builder in
+      (builder, m')
+    (* The order that we create and add the basic blocks for an If statement
+    doesnt 'really' matter (seemingly). What hooks them up in the right order
+    are the build_br functions used at the end of the then and else blocks (if
+    they don't already have a terminator) and the build_cond_br function at
+    the end, which adds jump instructions to the "then" and "else" basic blocks *)
+    | SIf (pred, then_stmts, else_stmts) ->
+      let bool_val = expr builder m pred in
+      (* Add "merge" basic block to our function's list of blocks *)
+      let merge_bb = L.append_block context "merge" the_function in
+      (* Partial function used to generate branch to merge block *)
+      let branch_instr = L.build_br merge_bb in
 
-    Parameters:
-    - builder:
-    - m (StringMap):
-    - sstmt: statement to be built
+      (* Same for "then" basic block *)
+      let then_bb = L.append_block context "then" the_function in
+      (* Position builder in "then" block and build the statement *)
+      let (then_builder, _) = stmt (L.builder_at_end context then_bb) m then_stmts in
+      (* Add a branch to the "then" block (to the merge block)
+      * if a terminator doesn't already exist for the "then" block
+      *)
+      let () = add_terminal then_builder branch_instr in
 
-    Returns:
+      (* Identical to stuff we did for "then" *)
+      let else_bb = L.append_block context "else" the_function in
+      let (else_builder, _) = stmt (L.builder_at_end context else_bb) m else_stmts in
+      let () = add_terminal else_builder branch_instr in
 
-    *)
-    let rec stmt builder m = function
-      (* Throw away the scope generated by block
-       * since the block should not be modifying our current scope *)
-        SBlock s1 ->
-        let helper (bldr, map) = stmt bldr map in
-        let (b, _) = List.fold_left helper (builder, m) s1 in
-        (b, m)
-      | SExpr e -> let _ = expr builder m e in (builder, m)
-      (* Right now SVDecl and SFDecl has no difference except se is optional for VDecl*)
-      | SDecl(t, n, se) ->
-        let se' = Printf.printf "%s" (string_of_sexpr se); expr builder m se in
-        let alloc_clsr clsr =
-          let func_name = ("f" ^ (string_of_int clsr.ind)) in
-          let (_, lfexpr) = StringMap.find func_name function_decls in
-          let func_t = L.pointer_type (ltype_of_lfexpr func_name lfexpr) in
-          let llclosure_struct_t = L.struct_type context [|func_t; void_ptr_t|] in
-          L.build_malloc llclosure_struct_t n builder
-        in
-        let (_, ex) = se in
-        let local_var = match ex with
-            SClosure(clsr) -> alloc_clsr clsr
-          | _ -> L.build_malloc (ltype_of_styp t) n builder
-        in
-        let m' = StringMap.add n (t, local_var) m  in
-        let _ = L.build_store se' local_var builder in
-        (builder, m')
-      (* The order that we create and add the basic blocks for an If statement
-      doesnt 'really' matter (seemingly). What hooks them up in the right order
-      are the build_br functions used at the end of the then and else blocks (if
-      they don't already have a terminator) and the build_cond_br function at
-      the end, which adds jump instructions to the "then" and "else" basic blocks *)
-      | SIf (pred, then_stmts, else_stmts) ->
-        let bool_val = expr builder m pred in
-        (* Add "merge" basic block to our function's list of blocks *)
-        let merge_bb = L.append_block context "merge" the_function in
-        (* Partial function used to generate branch to merge block *)
-        let branch_instr = L.build_br merge_bb in
+      (* Generate initial branch instruction perform the selection of "then"
+       or "else". Note we're using the builder we had access to at the start
+       of this alternative. *)
+      let _ = L.build_cond_br bool_val then_bb else_bb builder in
+      (L.builder_at_end context merge_bb, m)
+    | SReturn e ->
+      let _ = match lfexpr.lreturn_typ with
+          SVoid -> L.build_ret_void builder
+        | _ -> L.build_ret (expr builder m e) builder
+      in (builder, m)
+    | SWhile (predicate, body) ->
+      (* First create basic block for condition instructions -- this will
+      serve as destination in the case of a loop *)
+      let pred_bb = L.append_block context "while" the_function in
+      (* In current block, branch to predicate to execute the condition *)
+      let _ = L.build_br pred_bb builder in
 
-        (* Same for "then" basic block *)
-        let then_bb = L.append_block context "then" the_function in
-        (* Position builder in "then" block and build the statement *)
-        let (then_builder, _) = stmt (L.builder_at_end context then_bb) m then_stmts in
-        (* Add a branch to the "then" block (to the merge block)
-        * if a terminator doesn't already exist for the "then" block
-        *)
-        let () = add_terminal then_builder branch_instr in
+      (* Create the body's block, generate the code for it, and add a branch
+      back to the predicate block (we always jump back at the end of a while
+      loop's body, unless we returned or something) *)
+      let body_bb = L.append_block context "while_body" the_function in
+      let (while_builder, _) = stmt (L.builder_at_end context body_bb) m body in
+      let () = add_terminal while_builder (L.build_br pred_bb) in
 
-        (* Identical to stuff we did for "then" *)
-        let else_bb = L.append_block context "else" the_function in
-        let (else_builder, _) = stmt (L.builder_at_end context else_bb) m else_stmts in
-        let () = add_terminal else_builder branch_instr in
+      (* Generate the predicate code in the predicate block *)
+      let pred_builder = L.builder_at_end context pred_bb in
+      let bool_val = expr pred_builder m predicate in
 
-        (* Generate initial branch instruction perform the selection of "then"
-         or "else". Note we're using the builder we had access to at the start
-         of this alternative. *)
-        let _ = L.build_cond_br bool_val then_bb else_bb builder in
-        (L.builder_at_end context merge_bb, m)
-      | SReturn e ->
-        let _ = match lfexpr.lreturn_typ with
-            SVoid -> L.build_ret_void builder
-          | _ -> L.build_ret (expr builder m e) builder
-        in (builder, m)
-      | SWhile (predicate, body) ->
-        (* First create basic block for condition instructions -- this will
-        serve as destination in the case of a loop *)
-        let pred_bb = L.append_block context "while" the_function in
-        (* In current block, branch to predicate to execute the condition *)
-        let _ = L.build_br pred_bb builder in
-
-        (* Create the body's block, generate the code for it, and add a branch
-        back to the predicate block (we always jump back at the end of a while
-        loop's body, unless we returned or something) *)
-        let body_bb = L.append_block context "while_body" the_function in
-        let (while_builder, _) = stmt (L.builder_at_end context body_bb) m body in
-        let () = add_terminal while_builder (L.build_br pred_bb) in
-
-        (* Generate the predicate code in the predicate block *)
-        let pred_builder = L.builder_at_end context pred_bb in
-        let bool_val = expr pred_builder m predicate in
-
-        (* Hook everything up *)
-        let merge_bb = L.append_block context "merge" the_function in
-        let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
-        (L.builder_at_end context merge_bb, m)
-      (* Implement for loops as while loops! *)
-      | SFor (e1, e2, e3, body) -> stmt builder m
-            ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+      (* Hook everything up *)
+      let merge_bb = L.append_block context "merge" the_function in
+      let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+      (L.builder_at_end context merge_bb, m)
+    (* Implement for loops as while loops! *)
+    | SFor (e1, e2, e3, body) -> stmt builder m
+          ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
     | _ -> raise (Failure "stmt not implemented in codegen")
 
   in

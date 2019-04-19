@@ -178,7 +178,9 @@ and dfs_sexprs funcs env sexprs= match sexprs with
 and build_closure ?fname funcs env fexpr =
   let vars = List.fold_left add_bind StringMap.empty fexpr.sparams in
   let name = match fname with Some x -> x | None -> "" in
-  let vars_rec = match name with "" -> vars | _ -> StringMap.add name SABSTRACT vars in
+  let vars_rec = match name with
+      "" -> vars
+    | _ -> StringMap.add name SABSTRACT vars in
   let new_env = { variables = vars_rec; parent = Some env } in
   let (funcs', fvs, _, body') = dfs_sstmts funcs new_env fexpr.sbody in
   let clsr = { ind = List.length funcs'; free_vars = fvs; } in
