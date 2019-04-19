@@ -23,6 +23,17 @@ let check statements =
         Func _ -> StringMap.add name (SFunc(empty_func SVoid)) map
       | _ -> StringMap.add name (styp_of_typ ty) map
   in
+  (* Helper function for empty init. Match styp to the coresponding sx*)
+  let empty_sx styp = match styp with
+  SInt -> SIntLit (0)
+| SFloat -> SFloatLit ("0.0")
+| SBool -> SBoolLit (false)
+| SString -> SStrLit ("")
+| SList _ -> SListLit ([])
+| _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ "not implemented or shouldn't happen"))
+
+in
+
   (* List Helper Func*)
   let rec check_list_type symbol_table = function
       [] -> SEmpty
@@ -160,12 +171,13 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       let (istmts,_,_) = List.fold_left check_stmt (curr_lst,symbol_table,return_typ) stmt_list
       in (SBlock (List.rev istmts) :: curr_lst , symbol_table,return_typ)
   | Expr(e) -> (SExpr (check_expr symbol_table e):: curr_lst, symbol_table,return_typ)
-  | Decl(t,s,e) as exp -> (* THIS MAY BE WRONG *)(match e with
+  | Decl(t,s,e) as exp -> (* THIS MAY BE WRONG *)
+    (match e with
         None -> let ty = match t with
             Func _ -> raise (Failure ("Cannot declare an uninitialized function."))
           | typ -> styp_of_typ typ
         in
-          (SDecl (ty, s, (SEmpty,SNoexpr))::curr_lst, StringMap.add s ty symbol_table,return_typ)
+          (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
       | Some(e) ->
       let (t',e') = match t with
           Function | Func _ -> check_expr symbol_table e ~fname:s
