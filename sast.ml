@@ -77,8 +77,7 @@ let rec typ_of_styp t = match t with
   | SString -> String
   | SVoid -> Void
   | SList ty -> List (typ_of_styp ty)
-  | SFunc sfunc_typ -> Func { return_typ = (typ_of_styp sfunc_typ.sreturn_typ);
-                              param_typs = (List.map typ_of_styp sfunc_typ.sparam_typs) }
+  | SFunc sfunc_typ -> Func
   | SEmpty | SABSTRACT | SAny -> raise(Failure (" shouldn't happen"))
   | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp t) ^ " not implemented"))
 
@@ -89,8 +88,8 @@ and styp_of_typ t = match t with
   | String -> SString
   | Void -> SVoid
   | List ty -> SList (styp_of_typ ty)
-  | Func func_typ -> SFunc { sreturn_typ = (styp_of_typ func_typ.return_typ);
-                             sparam_typs = (List.map styp_of_typ func_typ.param_typs)}
+  | Func -> SFunc { sreturn_typ = SVoid;
+                             sparam_typs = []} (* Default SFunc to be void and no param*)
   | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ t ^ " not implmented"))
 
 and string_of_sstmt = function

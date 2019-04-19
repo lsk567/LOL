@@ -8,14 +8,9 @@ type typ =
   | Bool
   | String
   | Void
-  | Func of func_typ
+  | Func
   | List of typ
   | Tensor
-
-and func_typ = {
-    param_typs: typ list;
-    return_typ: typ;
-}
 
 (* operations *)
 type op = Add | Sub | Mul | Div | Equal | Neq | Less | Leq | Greater | Geq |
@@ -77,8 +72,7 @@ let fmt_list l =
 
 let rec string_of_typ = function
     Void -> "void"
-  | Func(e) -> "func(" ^ (String.concat "," (List.map string_of_typ e.param_typs))
-    ^ "; " ^ (string_of_typ e.return_typ) ^ ")"
+  | Func -> "func"
   | Int -> "int"
   | Float -> "float"
   | Bool -> "bool"

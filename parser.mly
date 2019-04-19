@@ -46,6 +46,7 @@ stmt:
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   /* Declarations */
   | typ ID init_opt SEMI                    { Decl ($1,$2,$3) } /* Initialize variables. Can have default init. */
+  | anonym_fun_decl                         { $1 }
   | fun_decl                                { $1 } /* Function Declaration */
   | RETURN expr_opt SEMI                    { Return($2) } /*  Return a value */
   /* Control Flows */
@@ -55,10 +56,12 @@ stmt:
                                             { For($3, $5, $7, $9) } /* For loop; for (;;) */
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5) } /* While loop, can be treated as a for loop */
 
+anonym_fun_decl:
+  FUNC ID ASSIGN FUNC ret_typ LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
+    { Decl ( Func, $2, Some(FExpr( { typ = $5; params = $7; body = List.rev $10} )))}
 fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
   FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-    { Decl( Func({ param_typs = List.map (fun (ty, _) -> ty) $5; return_typ = $2 }),
-      $3, Some(FExpr({ typ = $2; params = $5; body = List.rev $8 })))}
+    { Decl( Func, $3, Some(FExpr({ typ = $2; params = $5; body = List.rev $8 })))}
 
 /* if stuff */
 false_branch:
@@ -141,14 +144,9 @@ typ:
   | BOOL { Bool }
   | STRING { String }
   | VOID   { Void }
-  | func_type  { Func($1) }
+  | FUNC  { Func } /* Anonymous function */
   | LIST LT typ GT { List($3)}
   | TENSOR { Tensor }
-
-/* This is the type for Func with the syntax
-func (parameter_type1, parameter_type2; return_type) */
-func_type:
-    FUNC ret_typ LPAREN typ_opt RPAREN { { param_typs = $4; return_typ = $2 } }
 
 /* Helpers */
 typ_opt:
