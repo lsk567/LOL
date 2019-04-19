@@ -77,28 +77,29 @@ let rec typ_of_styp t = match t with
   | SString -> String
   | SVoid -> Void
   | SList ty -> List (typ_of_styp ty)
-  | SEmpty -> Empty
   | SFunc sfunc_typ -> Func { return_typ = (typ_of_styp sfunc_typ.sreturn_typ);
                               param_typs = (List.map typ_of_styp sfunc_typ.sparam_typs) }
+  | SEmpty | SABSTRACT | SAny -> raise(Failure (" shouldn't happen"))
+  | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp t) ^ " not implemented"))
 
-let rec styp_of_typ t = match t with
+and styp_of_typ t = match t with
     Int -> SInt
   | Bool -> SBool
   | Float -> SFloat
   | String -> SString
   | Void -> SVoid
   | List ty -> SList (styp_of_typ ty)
-  | Empty -> SEmpty
   | Func func_typ -> SFunc { sreturn_typ = (styp_of_typ func_typ.return_typ);
                              sparam_typs = (List.map styp_of_typ func_typ.param_typs)}
+  | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ t ^ " not implmented"))
 
-let string_of_sstmt = function
+and string_of_sstmt = function
   (* ADD MORE *)
   | SExpr(_) -> "SExpr"
   | _ -> "Other"
 
 (* PRETTY PRINTING based off of printer.ml *)
-let rec string_of_styp = function
+and string_of_styp = function
     SVoid -> "svoid"
   | SFunc(e) -> "sfunc(" ^
                 (String.concat "," (List.map string_of_styp e.sparam_typs)) ^ "; "
@@ -110,6 +111,10 @@ let rec string_of_styp = function
   | SList styp -> "slist(" ^ (string_of_styp styp) ^ ")"
   | SEmpty -> "sempty"
   | STensor -> "tensor"
+  | SABSTRACT -> "SABSTRACT"
+  | SAny -> "SAny"
+  | SListElement styp -> "sListElement (" ^ (string_of_styp styp) ^ ")"
+
 let fmt_sparams l =
   let fmt_p = function
       (t, n) -> String.concat "" ["("; string_of_styp t; ", "; n; ")"] in
