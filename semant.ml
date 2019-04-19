@@ -180,7 +180,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
           (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
       | Some(e) ->
       let (t',e') = match t with
-          Function | Func _ -> check_expr symbol_table e ~fname:s
+          Func _ -> check_expr symbol_table e ~fname:s
         | _ -> check_expr symbol_table e
       in
       if StringMap.mem s built_in_decls

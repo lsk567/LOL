@@ -9,9 +9,7 @@ type typ =
   | String
   | Void
   | Func of func_typ
-  | Function (* Anoynmous function *)
   | List of typ
-  | Empty
   | Tensor
 
 and func_typ = {
@@ -86,7 +84,6 @@ let rec string_of_typ = function
   | Bool -> "bool"
   | String -> "string"
   | List typ -> "list(" ^ (string_of_typ typ) ^ ")"
-  | Empty -> "empty"
   | Tensor -> "tensor"
 
 and string_of_typ_list l =

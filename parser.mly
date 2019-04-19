@@ -141,7 +141,6 @@ typ:
   | BOOL { Bool }
   | STRING { String }
   | VOID   { Void }
-  | FUNC {Function} /* Anonymous functions */
   | func_type  { Func($1) }
   | LIST LT typ GT { List($3)}
   | TENSOR { Tensor }
