@@ -13,23 +13,26 @@ all : lol.native builtins.o
 .PHONY : lol.native
 lol.native:
 	rm -f *.o
-	ocamlbuild -use-ocamlfind -pkgs llvm lol.native
+	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis,llvm.bitreader -cflags -w,+a-4 lol.native
 
 builtins.o :
-	cc -c -o builtins.o builtins.c -lm
+	gcc -c builtins.c
+	clang -emit-llvm -o builtins.bc -c builtins.c -Wno-varargs
+
 
 .PHONY : clean
 clean :
 	ocamlbuild -clean
 	rm -rf lol.native scanner.ml parser.ml parser.mli
-	rm -rf *.cmx *.cmi *.cmo *.cmx *.o *.s *.ll *.out *.exe
+	rm -rf ./*.ll
+	rm -rf *.cmx *.cmi *.cmo *.cmx *.o *.s *.bc *.out *.exe
 
 # More detailed: build using ocamlc/ocamlopt + ocamlfind to locate LLVM
 
 OBJS = ast.cmx sast.cmx codegen.cmx parser.cmx scanner.cmx semant.cmx lol.cmx
 
 lol : $(OBJS)
-	ocamlfind ocamlopt -linkpkg -package llvm -package llvm.analysis $(OBJS) -o grapl
+	ocamlfind ocamlopt -linkpkg -package llvm -package llvm.analysis $(OBJS) -o lol
 
 scanner.ml : scanner.mll
 	ocamllex scanner.mll
@@ -59,3 +62,4 @@ scanner.cmo : parser.cmi
 scanner.cmx : parser.cmx
 semant.cmo : ast.cmo
 semant.cmx : ast.cmx
+parser.cmi : ast.cmo
