@@ -22,6 +22,10 @@ and sfunc_typ = {
   sreturn_typ: styp;
 }
 
+(* No need for op *)
+
+type sbind = styp * string
+
 (* expressions *)
 type sexpr = styp * sx
 
@@ -49,8 +53,6 @@ and sfexpr = {
     sbody : sstmt list
 }
 
-and sbind = styp * string
-
 and sclsr = {
   ind: int;
   free_vars: sbind list;
@@ -66,118 +68,98 @@ and sstmt =
   | SFor of sexpr * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
 
-(* program *)
 type sprogram = sstmt list
 
-(* Pretty printing *)
-let rec typ_of_styp t = match t with
-    SInt -> Int
-  | SBool -> Bool
-  | SFloat -> Float
-  | SString -> String
-  | SVoid -> Void
-  | SList ty -> List (typ_of_styp ty)
-  | SFunc sfunc_typ -> Func
-  | SEmpty | SABSTRACT | SAny -> raise(Failure (" shouldn't happen"))
-  | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp t) ^ " not implemented"))
-
-and styp_of_typ t = match t with
+(* Helper function for converting between AST and SAST *)
+let rec styp_of_typ typ = match typ with
     Int -> SInt
   | Bool -> SBool
   | Float -> SFloat
   | String -> SString
   | Void -> SVoid
   | List ty -> SList (styp_of_typ ty)
-  | Func -> SFunc { sreturn_typ = SVoid;
-                             sparam_typs = []} (* Default SFunc to be void and no param*)
-  | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ t ^ " not implmented"))
+  | Func -> SFunc { sreturn_typ = SVoid; sparam_typs = []} (* Default SFunc to be void and no param*)
+  | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
 
-and string_of_sstmt = function
-  (* ADD MORE *)
-  | SExpr(_) -> "SExpr"
-  | _ -> "Other"
+and typ_of_styp styp = match styp with
+    SInt -> Int
+  | SBool -> Bool
+  | SFloat -> Float
+  | SString -> String
+  | SVoid -> Void
+  | SList sty -> List (typ_of_styp sty)
+  | SFunc sfunc_typ -> Func
+  | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp of " ^ string_of_styp styp ^ " shouldn't happen"))
+  | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
+
+(* Pretty printing *)
+and string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
+and string_of_list_sexpr l s = String.concat s (List.map string_of_sexpr l)
+and string_of_list_sbind f l s = String.concat s (List.map f l)
 
 (* PRETTY PRINTING based off of printer.ml *)
-and string_of_styp = function
-    SVoid -> "svoid"
-  | SFunc(e) -> "sfunc(" ^
-                (String.concat "," (List.map string_of_styp e.sparam_typs)) ^ "; "
-                ^ (string_of_styp e.sreturn_typ) ^ ")"
-  | SInt -> "sint"
+and string_of_styp styp = match styp with
+    SInt -> "sint"
   | SFloat -> "sfloat"
-  | SBool -> "sbool"
   | SString -> "sstring"
-  | SList styp -> "slist(" ^ (string_of_styp styp) ^ ")"
+  | SBool -> "sbool"
+  | SVoid -> "svoid"
+  | SFunc(sfunc_typ) -> "sfunc " ^ string_of_styp sfunc_typ.sreturn_typ ^ "("
+    ^ (String.concat "," (List.map string_of_styp sfunc_typ.sparam_typs))
+    ^ ")"
+  | SList styp -> string_of_styp styp ^ "[]"
   | SEmpty -> "sempty"
   | STensor -> "tensor"
   | SABSTRACT -> "SABSTRACT"
-  | SAny -> "SAny"
-  | SListElement styp -> "sListElement (" ^ (string_of_styp styp) ^ ")"
+  | SAny -> "sany"
+  | SListElement styp -> "slistelement (" ^ (string_of_styp styp) ^ ")"
 
-let fmt_sparams l =
-  let fmt_p = function
-      (t, n) -> String.concat "" ["("; string_of_styp t; ", "; n; ")"] in
-  fmt_list (List.map fmt_p l)
-
-let rec string_of_sexpr (_,s) =
-  (match s with
-     SIntLit(l) -> fmt_one "IntLit" (string_of_int l)
-   | SFloatLit(l) -> fmt_one "FloatLit" l
-   | SStrLit(l) -> fmt_one "StrLit"  l
-   | SBoolLit(l) -> fmt_one "BoolLit" (string_of_bool l)
-   | SId(s) -> fmt_one "Id" s
-   | SBinop(e1, o, e2) -> (string_of_sexpr e1) ^ "\n    " ^ (string_of_op o) ^ "\n    "
-                          ^ (string_of_sexpr e2)
-   | SUnop(uo, e) -> fmt_two "Unop" (string_of_uop uo) (string_of_sexpr e)
-   | SAssign(e1, o, e2) -> fmt_three "Assign" (string_of_sexpr e1) (string_of_op o) (string_of_sexpr e2)
-   | SCall(se, a) -> "SFCall(\n      " ^ ((string_of_sexpr se) ^ "\n") ^ ("      "
-                                ^ fmt_list (List.map string_of_sexpr a) ^ "\n    )")
-   (* below actually is parsed with {name = e.name; param = e.params;
-    * typ = e.typ; body = e.body}. See test programs for examples. *)
-   | SFExpr(s) -> fmt_three "FExpr" (fmt_sparams s.sparams)
-                    (string_of_styp s.styp) (fmt_sstmt_list s.sbody)
-   | SClosure(clsr) -> fmt_two "Closure" (string_of_int clsr.ind)
-                        (fmt_list (List.map (fun (t, n) -> string_of_styp t ^ " " ^ n)
-                        clsr.free_vars))
+and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
+  ^ match sx with
+     SIntLit(l) -> string_of_int l
+   | SFloatLit(l) -> l
+   | SStrLit(l) -> l
+   | SBoolLit(true) -> "true"
+   | SBoolLit(false) -> "false"
+   | SId(s) -> s
+   | SBinop(e1, o, e2) ->
+     (string_of_sexpr e1) ^ " " ^ (string_of_op o) ^ " " ^ (string_of_sexpr e2)
+   | SUnop(uo, e) -> string_of_uop uo ^ string_of_sexpr e
+   | SAssign(e1, o, e2) -> string_of_sexpr e1 ^ string_of_op o ^ string_of_sexpr e2
+   | SCall(se, se_list) -> string_of_sexpr se ^ string_of_list_sexpr se_list ", "
+   | SFExpr(sfexpr) -> string_of_sfexpr sfexpr
+   | SClosure(clsr) -> "{ ind: " ^ string_of_int clsr.ind ^ ", fvs: ("
+     ^ string_of_list_sbind string_of_sparam clsr.free_vars ", " ^ ") } )"
    | SNoexpr -> ""
    (* List *)
-   | SListLit(sexpr_list) -> fmt_one "ListLit" (fmt_list (List.map string_of_sexpr sexpr_list))
-   | SListAccess(s1,s2) -> fmt_two "ListAccess" (string_of_sexpr s1) (string_of_sexpr s2)
-  )
+   | SListLit(sexpr_list) -> string_of_list_sexpr sexpr_list ", "
+   | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]"
+  ^ ")"
 
-and fmt_smembers l =
-  let fmt_m = function
-      (t, n, None) -> fmt_three "" (string_of_styp t) n "None"
-    | (t, n, Some(e)) -> fmt_three "" (string_of_styp t) n (string_of_sexpr e) in
-  fmt_list (List.map fmt_m l)
+and string_of_sparam sparam = let (styp, s) = sparam in
+  string_of_styp styp ^ " " ^ s
 
-and fmt_sinit l =
-  let fmt_i (n, e) = fmt_two "" n (string_of_sexpr e) in
-  fmt_list (List.map fmt_i l)
+and string_of_sfexpr sfexpr =
+  "sfunc " ^ string_of_styp sfexpr.styp ^ " (" ^ string_of_list_sbind string_of_sparam sfexpr.sparams ", " ^")"
+  ^ "{\n" ^ string_of_list_sstmt sfexpr.sbody "" ^ "}\n"
 
-and fmt_sstmt = function
-    SExpr(se) -> string_of_sexpr se
-  | SReturn(e) -> "Return " ^ (string_of_sexpr e)
-  | SDecl (t, n, l) -> (string_of_styp t) ^ " " ^ n ^ " = " ^ (string_of_sexpr l)
-  | SFor (init, e2, e3, s) ->
-    fmt_four "ForLoop"
-      (string_of_sexpr init)
-      (string_of_sexpr e2)
-      (string_of_sexpr e3) (fmt_sstmt s)
-  | SWhile (e,s) -> fmt_two "while" (string_of_sexpr e) (string_of_sstmt s)
-  | SIf(e, tL, fL) -> fmt_three "If" (string_of_sexpr e) (fmt_sstmt tL)
-                        (fmt_sstmt fL)
-  | SBlock(sstmt_list) -> fmt_one "SVBlock" (fmt_list (List.map fmt_sstmt sstmt_list))
-
-and fmt_sstmt_list ?spacer l =
-  let sstmts = List.map fmt_sstmt l in
-  let s = match spacer with Some(s) -> s | _ -> "" in
-  let sstmts = List.map (fun x -> s ^ x) sstmts in
-  String.concat "\n" sstmts
-
-and fmt_opt_sexpr = function
-    None -> ""
-  | Some(e) -> string_of_sexpr e
+and string_of_sstmt = function
+      SBlock(sstmts) ->
+        "{\n" ^ string_of_list_sstmt sstmts "" ^ "}\n"
+    | SExpr(sexpr) -> string_of_sexpr sexpr ^ ";\n";
+    | SReturn(sexpr) -> "sreturn " ^ string_of_sexpr sexpr ^ ";\n";
+    | SIf(e, s1, fL) -> let then_part = match fL with
+          SBlock([]) -> ""
+        | SIf(_) as s2 -> "elif\n" ^ string_of_sstmt s2
+        | s2 -> "else\n" ^ string_of_sstmt s2
+      in
+      "sif (" ^ string_of_sexpr e ^ ")\n" ^ string_of_sstmt s1 ^ then_part
+    | SFor(se1, se2, se3, s) ->
+        "sfor (" ^ string_of_sexpr se1  ^ " ; " ^ string_of_sexpr se2 ^ " ; " ^
+        string_of_sexpr se3  ^ ") " ^ string_of_sstmt s
+    | SWhile(e, s) -> "swhile (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
+    | SDecl(t, id, (SVoid,SNoexpr)) -> string_of_styp t ^ " " ^ id ^ ";\n" (* Uninitalized *)
+    | SDecl(t, id, v) -> string_of_styp t ^ " " ^ id ^ " = " ^ string_of_sexpr v ^ ";\n"
 
 let string_of_sprogram sast =
-  String.concat ";\n" (List.map fmt_sstmt sast)
+  String.concat "" (List.map string_of_sstmt sast) ^ "\n"

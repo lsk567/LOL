@@ -173,12 +173,12 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
   | Expr(e) -> (SExpr (check_expr symbol_table e):: curr_lst, symbol_table,return_typ)
   | Decl(t,s,e) as exp -> (* THIS MAY BE WRONG *)
     (match e with
-        None -> let ty = match t with
+        Noexpr -> let ty = match t with
             Func _ -> raise (Failure ("Cannot declare an uninitialized function."))
           | typ -> styp_of_typ typ
         in
           (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
-      | Some(e) ->
+      | e ->
       let (t',e') = match t with
           Func _ -> check_expr symbol_table e ~fname:s
         | _ -> check_expr symbol_table e

@@ -45,7 +45,8 @@ stmt:
     expr SEMI                               { Expr($1)              } /* x = 3; */
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   /* Declarations */
-  | typ ID init_opt SEMI                    { Decl ($1,$2,$3) } /* Initialize variables. Can have default init. */
+  | typ ID SEMI                             { Decl ($1,$2,Noexpr) } /* Initialize variables. Can have default init. */
+  | typ ID ASSIGN expr SEMI                 { Decl ($1,$2,$4) }
   | anonym_fun_decl                         { $1 }
   | fun_decl                                { $1 } /* Function Declaration */
   | RETURN expr_opt SEMI                    { Return($2) } /*  Return a value */
@@ -58,10 +59,10 @@ stmt:
 
 anonym_fun_decl:
   FUNC ID ASSIGN FUNC ret_typ LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-    { Decl ( Func, $2, Some(FExpr( { typ = $5; params = $7; body = List.rev $10} )))}
+    { Decl ( Func, $2, FExpr( { typ = $5; params = $7; body = List.rev $10} ))}
 fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
   FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-    { Decl( Func, $3, Some(FExpr({ typ = $2; params = $5; body = List.rev $8 })))}
+    { Decl( Func, $3, FExpr({ typ = $2; params = $5; body = List.rev $8 }))}
 
 /* if stuff */
 false_branch:
@@ -164,10 +165,6 @@ opt_items:
 item_list:
   expr { [$1] }
 | item_list COMMA expr {$3 :: $1}
-
-init_opt:
-  /* nothing */ { None }
-| ASSIGN expr   { Some($2) }
 
 expr_opt:
   /* nothing */ { Noexpr }

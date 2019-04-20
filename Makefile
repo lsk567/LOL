@@ -24,7 +24,8 @@ builtins.o :
 clean :
 	ocamlbuild -clean
 	rm -rf lol.native scanner.ml parser.ml parser.mli
-	rm -rf *.cmx *.cmi *.cmo *.cmx *.o *.s *.bc *.ll *.out *.exe
+	rm -rf ./*.ll
+	rm -rf *.cmx *.cmi *.cmo *.cmx *.o *.s *.bc *.out *.exe
 
 # More detailed: build using ocamlc/ocamlopt + ocamlfind to locate LLVM
 

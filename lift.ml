@@ -93,7 +93,7 @@ let rec dfs_sstmt funcs env sstmt =
         let (funcs1, fvs1, e') = dfs_sexpr funcs env e in
         let (funcs2, fvs2, _, s') = dfs_sstmt funcs1 env s in
         (funcs2, List.concat [fvs1; fvs2], env, SWhile(e', s'))
-      | _ -> print_endline(fmt_sstmt sstmt); raise (Failure "not implemented in lifter")
+      | _ -> print_endline(string_of_sstmt sstmt); raise (Failure "not implemented in lifter")
     in
     let check_scope (_, fv) = not (StringMap.mem fv env.variables) in
     let fvs' = List.filter check_scope fvs' in
@@ -220,7 +220,7 @@ let fmt_lfunc f = String.concat "\n" [
     " -return_t: " ^ string_of_styp f.lreturn_typ;
     " -params: " ^ String.concat ""
       (List.map (fun (t, n) -> (string_of_styp t) ^ " " ^ n) f.lparams);
-    " -lbody: \n" ^ fmt_sstmt_list f.lbody ~spacer:"    ";
+    " -lbody: \n" ^ string_of_list_sstmt f.lbody ", ";
   ]
 
 let helper (name, f) = name ^ ":\n" ^ (fmt_lfunc f)
