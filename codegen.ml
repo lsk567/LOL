@@ -83,7 +83,7 @@ let translate functions =
     | SEmpty -> void_t
     | SList _ -> list_t
     | SListElement _ -> lst_element_t
-    
+
     | SAny -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
 
@@ -386,10 +386,11 @@ let translate functions =
             ignore(list_fill m lst contents); lst
     | SListAccess(arr, i) ->
       let arr_var = expr builder m arr in
-      let idx = expr builder m i in 
+      let idx = expr builder m i in
       let list_access_f = get_func "list_get" the_module in
-      let ptr = L.build_call list_access_f [|arr_var; idx|] "list_get" builder in
-      ptr
+      let data_ptr = L.build_call list_access_f [|arr_var; idx|] "list_get" builder in
+      let data_ptr = L.build_bitcast data_ptr (L.pointer_type (ltype_of_styp styp)) "data" builder in
+      L.build_load data_ptr "data" builder
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in
