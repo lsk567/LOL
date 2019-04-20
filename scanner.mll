@@ -10,6 +10,8 @@ rule token = parse
 (* Comments *)
 | "//"                 { linec lexbuf } (* Single-line  Comments *)
 | "/*"                 { comment 0 lexbuf} (* Multi-line  Comments *)
+(* Member func *)
+| ".append"            { APPEND }
 (* Symbols *)
 | '('                  { LPAREN }
 | ')'                  { RPAREN }

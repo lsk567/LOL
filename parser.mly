@@ -3,6 +3,7 @@
   module StringMap = Map.Make (String)
 %}
 
+%token APPEND
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR
 %token QUOTE COMMA DOT
@@ -28,6 +29,7 @@
 %left TIMES DIVIDE
 %left POW
 %right NOT
+%left APPEND
 
 %start program
 %type <Ast.program> program
@@ -118,6 +120,7 @@ expr:
   | accessor TIMESASN expr  { Assign($1, Mul, $3) }
   | accessor DIVIDEASN expr { Assign($1, Div, $3) }
   | accessor MODASN expr    { Assign($1, Mod, $3) }
+  | accessor APPEND LPAREN expr RPAREN { ListAppend($1, $4) }
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
 

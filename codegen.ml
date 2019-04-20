@@ -378,7 +378,7 @@ let translate functions =
           in
           let list_append_f = get_func "list_append" the_module in
           let data = L.build_bitcast data void_ptr_t "data" builder in
-                    ignore (L.build_call list_append_f [| lst; data |] "list_append" builder);
+                    ignore (L.build_call list_append_f [| lst; data |] "" builder);
                     list_fill m lst rest)
       in
       let list_init_f = get_func "list_init" the_module in
@@ -391,6 +391,20 @@ let translate functions =
       let data_ptr = L.build_call list_access_f [|arr_var; idx|] "list_get" builder in
       let data_ptr = L.build_bitcast data_ptr (L.pointer_type (ltype_of_styp styp)) "data" builder in
       L.build_load data_ptr "data" builder
+    | SListAppend(arr, it) ->
+      let arr_var = expr builder m arr in
+      let item = expr builder m it in
+      let (typ, _) = it in
+      let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
+      let unused = L.build_store item data_ptr builder in
+      let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
+      
+
+
+
+
+      let list_append_f = get_func "list_append" the_module in
+      L.build_call list_append_f [|arr_var; data|] "" builder
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in

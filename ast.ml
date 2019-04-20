@@ -33,6 +33,7 @@ and expr =
 	| Call of expr * expr list
   | ListLit of expr list
   | ListAccess of expr * expr
+  | ListAppend of expr * expr
   | ListLength of expr
   | FExpr of fexpr
 	| Noexpr
@@ -116,6 +117,7 @@ and string_of_expr = function
   (* List *)
   | ListLit(expr_list) -> string_of_list_expr expr_list ", "
   | ListAccess(e1,e2) -> string_of_expr e1 ^ "[" ^ (string_of_expr e2) ^ "]"
+  | ListAppend(e1,e2) -> string_of_expr e1 ^ "Append[" ^ (string_of_expr e2) ^ "]"
   | ListLength(e) -> "len(" ^ string_of_expr e ^ ")"
 
 and string_of_fexpr fexpr =
