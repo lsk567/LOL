@@ -130,3 +130,8 @@ void gsl_test (char *str) {
 	printf ("J0(%g) = %.18e\n", x, y); 
 	return;
 }
+
+// pipe the operator into SCall to a builtin
+// M + N => SCall (concat, M, N) concat \in builtin
+// keep Tensor as a class
+// use bitcode to translate
