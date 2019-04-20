@@ -387,11 +387,9 @@ let translate functions =
     | SListAccess(arr, i) ->
       let arr_var = expr builder m arr in
       let idx = expr builder m i in 
-      let ptr = 
-        L.build_load (L.build_gep arr_var 
-                        [| idx |] "" builder) 
-          "" builder 
-      in ptr
+      let list_access_f = get_func "list_get" the_module in
+      let ptr = L.build_call list_access_f [|arr_var; idx|] "list_get" builder in
+      ptr
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in
