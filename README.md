@@ -4,6 +4,7 @@
 # Requirements
 - LLVM 7.0.0 or higher
 - OCaml 4.05.0 or higher
+- Clang
 - OPAM
 
 # Usage

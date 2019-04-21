@@ -6,6 +6,119 @@
 
 #define MAXFLOATSIZE 50
 
+typedef struct List_element {
+    struct List_element *next;
+    struct List_element *prev;
+    void *data;
+} list_element;
+
+typedef struct List {
+    int32_t length;
+    list_element *head;
+    list_element *tail;
+} list;
+
+/*
+=====================================================
+                   LIST FUNCTIONS
+=====================================================
+*/
+//init list
+list* list_init() {
+    list* l = (list *) malloc(sizeof(list));
+    l->length = 0;
+    l->head = NULL;
+    l->tail = NULL;
+    return l;
+}
+
+//access element
+void* list_get(list *l, int index) {
+    if(index >= l->length) {
+        return NULL;
+    }
+    list_element *curr = l->head;
+    int count = 0;
+    while(count < index) {
+        curr = curr->next;
+        count++;
+    }
+
+    return curr->data;
+}
+
+//set element
+list_element* list_set(list *l, void *data, int index) {
+    if(index >= l->length) {
+        return NULL;
+    }
+    list_element *curr = l->head;
+    int count = 0;
+    while(count < index) {
+        curr = curr->next;
+        count++;
+    }
+    free(curr->data);
+    curr->data = data;
+    return curr;
+}
+
+//append element: can be any type
+void list_append(list *l, void *data) {
+    list_element *le = (list_element*) malloc(sizeof(list_element));
+    le->data = data;
+    le->next = NULL;
+    le->prev = l->tail;
+    if(l->tail) {
+        l->tail->next = le;
+    }
+    else { //empty list
+        l->head = le;
+    }
+    l->tail = le;
+    l->length += 1;
+
+    //return le;
+}
+
+//concatenate lists
+list* list_concat(list *l1, list *l2) {
+    list *new_list = list_init();
+    list_element *curr = l1->head;
+    while(curr) {
+        list_append(new_list, curr->data);
+        curr = curr->next;
+    }
+    curr = l2->head;
+    while(curr) {
+        list_append(new_list, curr->data);
+        curr = curr->next;
+    }
+    return new_list;
+}
+
+/* assumes that the list contains the element */
+void list_remove(list *l, list_element *e) {
+    if(l->head == e) {
+        l->head = e->next;
+    }
+    else {
+        e->prev->next = e->next;
+    }
+    if(l->tail == e) {
+        l->tail = e->prev;
+    }
+    else {
+        e->next->prev = e->prev;
+    }
+    l->length--;
+    free(e);
+}
+
+int32_t list_length(list *l) {
+    return l->length;
+}
+
 // assumes the str that's based in is correctly null terminated
 void println(char * str){
   printf("%s\n",str);

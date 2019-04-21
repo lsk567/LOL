@@ -8,21 +8,20 @@ type typ =
   | Bool
   | String
   | Void
-  | Func of func_typ
-
-and func_typ = {
-    param_typs: typ list;
-    return_typ: typ;
-}
+  | Func
+  | List of typ
+  | Tensor
 
 (* operations *)
 type op = Add | Sub | Mul | Div | Equal | Neq | Less | Leq | Greater | Geq |
-          And | Or
+          And | Or | Mod | Pow | Outer | NoOp
 
-type uop = Neg | Not
+and uop = Neg | Not
+
+type bind = typ * string
 
 (* expressions *)
-type expr =
+and expr =
     IntLit of int
   | FloatLit of string
 	| BoolLit of bool
@@ -30,65 +29,53 @@ type expr =
 	| Id of string
   | Binop of expr * op * expr
 	| Unop of uop * expr
-  | Assign of expr * expr
+  | Assign of expr * op * expr
 	| Call of expr * expr list
+  | ListLit of expr list
+  | ListAccess of expr * expr
+  | ListAppend of expr * expr
+  | ListLength of expr
   | FExpr of fexpr
 	| Noexpr
 
 and fexpr = {
   	typ : typ;
-  	name : string;
   	params : bind list;
   	body : stmt list;
   }
 
-and bind = typ * string
-
 (* Statements*)
 and stmt =
+    Block of stmt list
 	| Expr of expr
-  | FDecl of typ * string * expr
-  | VDecl of typ * string * expr option
+  | Decl of typ * string * expr
 	| Return of expr
-  | If of expr * stmt list * stmt list
-  | For of (stmt option) * (expr option) * (expr option) * stmt list
-  | While of (expr option) * stmt list
+  | If of expr * stmt * stmt
+  | For of expr * expr * expr * stmt
+  | While of expr * stmt
 
 type program = stmt list
 
-(* pretty-printing *)
+(* pretty-printing, should return the same code *)
 
-let fmt_one name v = String.concat "" [name; "("; v; ")"]
-let fmt_two name v1 v2 = String.concat "" [name; "("; v1; ","; v2; ")"]
-let fmt_three name v1 v2 v3 = String.concat ""
-  [name; "("; v1; ","; v2; ","; v3; ")"]
-let fmt_four name v1 v2 v3 v4 = String.concat ""
-  [name; "("; v1; ","; v2; ","; v3; ","; v4; ")"]
-let fmt_five name v1 v2 v3 v4 v5 = String.concat ""
-  [name; "("; v1; ","; v2; ","; v3; ","; v4; ","; string_of_bool v5; ")"]
-
-let fmt_list l =
-  let items = String.concat ";" l in
-  String.concat "" ["["; items; "]"]
-
-let rec fmt_typ = function
+let rec string_of_typ = function
     Void -> "void"
-  | Func(e) -> "func(" ^ (String.concat "," (List.map fmt_typ e.param_typs))
-    ^ "; " ^ (fmt_typ e.return_typ) ^ ")"
+  | Func -> "func"
   | Int -> "int"
   | Float -> "float"
   | Bool -> "bool"
   | String -> "string"
+  | List typ -> string_of_typ typ ^ "[]"
+  | Tensor -> "Tensor"
 
-and fmt_typ_list l =
-  let typs = List.map fmt_typ l in
-  fmt_list typs
-
-let fmt_op = function
+let string_of_op = function
     Add -> "+"
   | Sub -> "-"
   | Mul -> "*"
   | Div -> "/"
+  | Mod -> "%"
+  | Pow -> "^"
+  | Outer -> "@"
   | Equal -> "=="
   | Neq -> "!="
   | Less -> "<"
@@ -97,67 +84,64 @@ let fmt_op = function
   | Geq -> ">="
   | And -> "&&"
   | Or -> "||"
+  | Mod -> "%"
+  | Pow -> "^"
+  | Outer -> "@"
+  | NoOp -> ""
 
-let fmt_uop = function
+let string_of_uop = function
     Neg -> "-"
   | Not -> "!"
 
-let fmt_params l =
-  let fmt_p = function
-    (t, n) -> String.concat "" ["("; fmt_typ t; ", "; n; ")"] in
-  fmt_list (List.map fmt_p l)
 
-let rec fmt_expr = function
-    IntLit(l) -> fmt_one "IntLit" (string_of_int l)
-  | FloatLit(l) -> fmt_one "FloatLit" l
-  | StrLit(l) -> fmt_one "StrLit"  l
-  | BoolLit(l) -> fmt_one "BoolLit" (string_of_bool l)
-  | Id(s) -> fmt_one "Id" s
-  | Binop(e1, o, e2) -> fmt_three "Binop" (fmt_expr e1) (fmt_op o) (fmt_expr e2)
-  | Unop(uo, e) -> fmt_two "Unop" (fmt_uop uo) (fmt_expr e)
-  | Assign(e1, e2) -> fmt_two "Assign" (fmt_expr e1) (fmt_expr e2)
-  | Call(_, _) -> "Function Call"
+(* map each element in list by function f, and join the string by s *)
+let rec string_of_list_stmt l s = String.concat s (List.map string_of_stmt l)
+and string_of_list_expr l s = String.concat s (List.map string_of_expr l)
+and string_of_list_bind f l s = String.concat s (List.map f l)
+
+and string_of_expr = function
+    IntLit(l) -> string_of_int l
+  | FloatLit(l) -> l
+  | StrLit(l) -> l
+  | BoolLit(true) -> "true"
+  | BoolLit(false) -> "false"
+  | Id(s) -> s
+  | Binop(e1, o, e2) -> string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
+  | Unop(uo, e) -> string_of_uop uo ^ " " ^ string_of_expr e
+  | Assign(e1, o, e2) -> string_of_expr e1 ^ string_of_op o ^ "= " ^ string_of_expr e2
+  | Call(e, e_list) -> string_of_expr e ^ "(" ^ string_of_list_expr e_list ", " ^ ")"
   (* below actually is parsed with {name = e.name; param = e.params;
    * typ = e.typ; body = e.body}. See test programs for examples. *)
-  | FExpr(e) -> fmt_fexpr e
+  | FExpr(fexpr) -> string_of_fexpr fexpr
   | Noexpr -> ""
+  (* List *)
+  | ListLit(expr_list) -> string_of_list_expr expr_list ", "
+  | ListAccess(e1,e2) -> string_of_expr e1 ^ "[" ^ (string_of_expr e2) ^ "]"
+  | ListAppend(e1,e2) -> string_of_expr e1 ^ "Append[" ^ (string_of_expr e2) ^ "]"
+  | ListLength(e) -> "len(" ^ string_of_expr e ^ ")"
 
-and fmt_fexpr e =
-  fmt_three "FExpr" (fmt_params e.params) (fmt_typ e.typ) (fmt_stmt_list e.body)
+and string_of_fexpr fexpr =
+  "func " ^ string_of_typ fexpr.typ ^ " (" ^ string_of_list_bind string_of_param fexpr.params ", " ^")"
+  ^ "{\n" ^ string_of_list_stmt fexpr.body "" ^ "}\n"
 
-and fmt_members l =
-  let fmt_m = function
-    (t, n, None) -> fmt_three "" (fmt_typ t) n "None"
-  | (t, n, Some(e)) -> fmt_three "" (fmt_typ t) n (fmt_expr e) in
-  fmt_list (List.map fmt_m l)
+and string_of_param param = let (typ, s) = param in
+  string_of_typ typ ^ " " ^ s
 
-and fmt_init l =
-   let fmt_i (n, e) = fmt_two "" n (fmt_expr e) in
-   fmt_list (List.map fmt_i l)
+and string_of_stmt = function
+    Block(stmts) -> "{\n" ^ string_of_list_stmt stmts "" ^ "}\n"
+  | Expr(e) -> string_of_expr e ^ ";\n";
+  | Return(e) -> "return " ^ string_of_expr e ^ ";\n"
+  | Decl (t, s, Noexpr) -> string_of_typ t ^ " " ^  s ^ ";\n"
+  | Decl (t, s, e) -> string_of_typ t ^ " " ^ s ^ " = " ^ string_of_expr e ^ ";\n"
+  | For (e1, e2, e3, s) -> "for (" ^ string_of_expr e1 ^ " ; " ^ string_of_expr e2 ^ " ; "
+    ^ string_of_expr e3 ^ ") " ^ string_of_stmt s ^"\n"
+  | While (e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
+  | If(e, s1, fL) -> let then_part = match fL with
+        Block([]) -> ""
+      | If(_) as s2 -> "elif\n" ^ string_of_stmt s2
+      | s2 -> "else\n" ^ string_of_stmt s2
+    in
+    "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s1 ^ then_part
 
-and fmt_stmt = function
-    Expr(e) -> fmt_expr e
-  | Return(e) -> fmt_one "Return" (fmt_expr e)
-  | VDecl (t, n, l) -> fmt_three "VDecl" (fmt_typ t) n (match l with
-    None -> "" | Some(e) -> fmt_expr e)
-  | FDecl (t, n, l) -> fmt_three "FDecl" (fmt_typ t) n (fmt_expr l)
-  | For (init, e2, e3, s) ->
-    fmt_four "ForLoop"
-    (match init with None -> "" | Some(s) -> fmt_stmt s)
-    (fmt_opt_expr e2)
-    (fmt_opt_expr e3) (fmt_stmt_list s)
-  | While (e, s) ->
-    fmt_two "WhileLoop" (fmt_opt_expr e) (fmt_stmt_list s)
-  | If(e, tL, fL) -> fmt_three "If" (fmt_expr e) (fmt_stmt_list tL)
-    (fmt_stmt_list fL)
-
-and fmt_stmt_list l =
-  let stmts = List.map fmt_stmt l in
-  String.concat "\n" stmts
-
-and fmt_opt_expr = function
-    None -> ""
-  | Some(e) -> fmt_expr e
-
-let string_of_program ast =
-  fmt_stmt_list ast
+let string_of_program stmts =
+  String.concat "" (List.map string_of_stmt stmts) ^ "\n"
