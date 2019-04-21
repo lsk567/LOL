@@ -25,5 +25,6 @@ let builtins = [
   ("list_init", SFunc({sparam_typs= []; sreturn_typ = SList (SAny) }));
   ("list_append", SFunc({sparam_typs= [SList (SAny); SAny]; sreturn_typ = SVoid }));
   ("list_get", SFunc({sparam_typs= [SList (SAny); SInt]; sreturn_typ = SListElement (SAny) }));
+  ("list_length", SFunc({sparam_typs= [SList (SAny)]; sreturn_typ = SInt }));
 
 ]
