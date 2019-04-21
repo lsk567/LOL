@@ -170,6 +170,14 @@ and check_expr symbol_table ?fname = function
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
     in 
     if t2 = t3 then (SVoid, SListAppend((t1, se1), (t2, se2))) else raise (Failure ("can't append list with different type"))
+  | ListLength(e) ->
+    let (t1, se) = check_expr symbol_table e
+    in
+    let t2 = match t1 with
+        SList(t3) -> t3
+      | _ -> raise (Failure ("Not a list: " ^ string_of_expr e))
+    in 
+    (SInt, SListLength((t2, se)))
     
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list

@@ -3,7 +3,7 @@
   module StringMap = Map.Make (String)
 %}
 
-%token APPEND
+%token APPEND LENGTH
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR
 %token QUOTE COMMA DOT
@@ -29,7 +29,7 @@
 %left TIMES DIVIDE
 %left POW
 %right NOT
-%left APPEND
+%left APPEND LENGTH
 
 %start program
 %type <Ast.program> program
@@ -113,20 +113,20 @@ expr:
 
   /*List*/
   | LSQBRACE opt_items RSQBRACE { ListLit($2) }
-  | accessor                { $1 }
   | accessor ASSIGN expr    { Assign($1, NoOp, $3) }
   | accessor PLUSASN expr   { Assign($1, Add, $3) }
   | accessor MINUSASN expr  { Assign($1, Sub, $3) }
   | accessor TIMESASN expr  { Assign($1, Mul, $3) }
   | accessor DIVIDEASN expr { Assign($1, Div, $3) }
   | accessor MODASN expr    { Assign($1, Mod, $3) }
-  | accessor APPEND LPAREN expr RPAREN { ListAppend($1, $4) }
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
 
 /* Accesors, helpful for recursive case */
 accessor:
     accessor LPAREN args_opt RPAREN { Call($1, $3)  } /* fun(x) */
+  | accessor APPEND LPAREN expr RPAREN { ListAppend($1, $4) }
+  | accessor LENGTH LPAREN RPAREN { ListLength($1) }
   | accessor LSQBRACE expr RSQBRACE { ListAccess($1, $3) }
   | atom { $1 }
 

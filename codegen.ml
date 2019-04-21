@@ -398,13 +398,12 @@ let translate functions =
       let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
       let unused = L.build_store item data_ptr builder in
       let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
-      
-
-
-
-
       let list_append_f = get_func "list_append" the_module in
       L.build_call list_append_f [|arr_var; data|] "" builder
+    | SListLength(arr) ->
+      let arr_var = expr builder m arr in
+      let list_length_f = get_func "list_length" the_module in
+      L.build_call list_length_f [|arr_var|] "list_length" builder
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in

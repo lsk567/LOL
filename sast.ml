@@ -44,6 +44,7 @@ and sx =
   | SListLit of sexpr list
   | SListAccess of sexpr * sexpr
   | SListAppend of sexpr * sexpr
+  | SListLength of sexpr
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
@@ -136,6 +137,7 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SListLit(sexpr_list) -> string_of_list_sexpr sexpr_list ", "
    | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]" ^ ")"
    | SListAppend(s1,s2) -> string_of_sexpr s1 ^ "Append[" ^ (string_of_sexpr s2) ^ "]"
+   | SListLength(e) -> "len(" ^ string_of_sexpr e ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in
   string_of_styp styp ^ " " ^ s
