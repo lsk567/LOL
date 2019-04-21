@@ -385,12 +385,18 @@ let translate functions =
       let lst = L.build_call list_init_f [||] "list_init" builder in
             ignore(list_fill m lst contents); lst
     | SListAccess(arr, i) ->
+      let ltype = ltype_of_styp styp in
       let arr_var = expr builder m arr in
       let idx = expr builder m i in
       let list_access_f = get_func "list_get" the_module in
       let data_ptr = L.build_call list_access_f [|arr_var; idx|] "list_get" builder in
-      let data_ptr = L.build_bitcast data_ptr (L.pointer_type (ltype_of_styp styp)) "data" builder in
-      L.build_load data_ptr "data" builder
+      (match styp with
+        SList _ ->
+          L.build_bitcast data_ptr ltype "data" builder
+        | _ ->
+        let data_ptr = L.build_bitcast data_ptr (L.pointer_type ltype) "data" builder in
+        L.build_load data_ptr "data" builder
+      )
     | SListAppend(arr, it) ->
       let arr_var = expr builder m arr in
       let item = expr builder m it in
