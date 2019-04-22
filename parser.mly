@@ -5,7 +5,7 @@
 
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR
-%token QUOTE COMMA DOT
+%token QUOTE COLON COMMA DOT
 %token PLUS MINUS TIMES DIVIDE MOD OUTER POW ASSIGN
 %token PLUSASN MINUSASN TIMESASN DIVIDEASN MODASN INC DEC
 %token EQ NEQ LT GT LEQ GEQ AND OR NOT
@@ -19,6 +19,7 @@
 
 %nonassoc NOELSE
 %nonassoc ELSE
+%nonassoc COLON
 %right PLUSASN MINUSASN TIMESASN DIVIDEASN MODASN ASSIGN
 %left OR
 %left AND
@@ -47,7 +48,6 @@ stmt:
   /* Declarations */
   | typ ID SEMI                             { Decl ($1,$2,Noexpr) } /* Initialize variables. Can have default init. */
   | typ ID ASSIGN expr SEMI                 { Decl ($1,$2,$4) }
-  | anonym_fun_decl                         { $1 }
   | fun_decl                                { $1 } /* Function Declaration */
   | RETURN expr_opt SEMI                    { Return($2) } /*  Return a value */
   /* Control Flows */
@@ -57,12 +57,11 @@ stmt:
                                             { For($3, $5, $7, $9) } /* For loop; for (;;) */
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5) } /* While loop, can be treated as a for loop */
 
-anonym_fun_decl:
-  FUNC ID ASSIGN FUNC ret_typ LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-    { Decl ( Func, $2, FExpr( { typ = $5; params = $7; body = List.rev $10} ))}
 fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
   FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
-    { Decl( Func, $3, FExpr({ typ = $2; params = $5; body = List.rev $8 }))}
+    { Decl( Func({param_typs = List.map (fun (ty, _) -> ty) $5;return_typ = $2 }),
+    $3,
+    FExpr({ typ = $2; params = $5; body = List.rev $8 }))}
 
 /* if stuff */
 false_branch:
@@ -99,6 +98,9 @@ expr:
   | expr AND    expr { Binop($1, And,   $3)   }
   | expr OR     expr { Binop($1, Or,    $3)   }
 
+  /* Function expression*/
+  | function_expr { $1 }
+
   /* Assignmnent */
   | ID ASSIGN expr    { Assign(Id($1), NoOp,$3)      }
   | ID PLUSASN   expr { Assign(Id($1), Add, $3) }
@@ -134,6 +136,9 @@ atom:
   | STRLIT           { StrLit($1) }
   | ID                { Id($1) }
 
+function_expr:
+  FUNC ret_typ LPAREN params_opt RPAREN LBRACE stmt_list RBRACE {FExpr( { typ = $2; params = $4; body = List.rev $7} )}
+
 /* Types */
 ret_typ:
     VOID { Void }
@@ -145,7 +150,8 @@ typ:
   | BOOL { Bool }
   | STRING { String }
   | VOID   { Void }
-  | FUNC  { Func } /* Anonymous function */
+  | FUNC LPAREN typ_opt COLON ret_typ RPAREN { Func ( { param_typs = $3; return_typ = $5 } )}
+  | FUNC  { Func ( { param_typs = []; return_typ = Abstract } ) } /* Anonymous function */
   | LIST LT typ GT { List($3)}
   | TENSOR { Tensor }
 
@@ -177,6 +183,8 @@ params_opt:
 param_list:
   typ ID { [($1, $2)] }
 | param_list COMMA typ ID { ($3, $4) :: $1 }
+
+
 
 args_opt:
   /* nothing */ { [] }

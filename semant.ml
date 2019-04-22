@@ -20,19 +20,19 @@ let check statements =
       with Not_found -> raise (Failure ("undeclared identifier " ^ s))
   in
   let add_bind  map (ty, name) = match ty with
-        Func _ -> StringMap.add name (SFunc(empty_func SVoid)) map
+        Func func_typ -> StringMap.add name (sfunc_of_func ty) map
       | _ -> StringMap.add name (styp_of_typ ty) map
   in
   (* Helper function for empty init. Match styp to the coresponding sx*)
   let empty_sx styp = match styp with
-  SInt -> SIntLit (0)
-| SFloat -> SFloatLit ("0.0")
-| SBool -> SBoolLit (false)
-| SString -> SStrLit ("")
-| SList _ -> SListLit ([])
-| _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ "not implemented or shouldn't happen"))
+    SInt -> SIntLit (0)
+  | SFloat -> SFloatLit ("0.0")
+  | SBool -> SBoolLit (false)
+  | SString -> SStrLit ("")
+  | SList _ -> SListLit ([])
+  | _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ "not implemented or shouldn't happen"))
 
-in
+  in
 
   (* List Helper Func*)
   let rec check_list_type symbol_table = function
@@ -56,13 +56,20 @@ in
   and infer_typ lt rt = match (lt,rt) with
         (_, SVoid) -> lt
       | (SFunc f1, SFunc f2) ->
-        let same_ret = infer_typ f1.sreturn_typ f2.sreturn_typ in
-        let same_args = List.fold_left2 (fun l f1' f2' -> (infer_typ f1' f2')::l) [] f1.sparam_typs f2.sparam_typs in
-        let infer_func = { sreturn_typ = same_ret; sparam_typs = same_args } in
-        SFunc (infer_func)
+        (match (f1.sreturn_typ,f2.sreturn_typ) with
+          (SABSTRACT,_) -> rt
+        | (_,SABSTRACT) -> lt
+        | _ ->
+          let same_ret = infer_typ f1.sreturn_typ f2.sreturn_typ in
+          let same_args = List.fold_left2 (fun l f1' f2' -> (infer_typ f1' f2')::l) [] f1.sparam_typs f2.sparam_typs in
+          let infer_func = { sreturn_typ = same_ret; sparam_typs = same_args } in
+          SFunc (infer_func)
+        )
       (* List *)
       | (_, SEmpty) -> lt
       | (SList t1, SList t2) -> SList (infer_typ t1 t2)
+      | (SABSTRACT, _) -> rt
+      | (_,SABSTRACT) -> lt
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
 
@@ -79,19 +86,19 @@ and check_expr symbol_table ?fname = function
   * Checks parameters, the body and finally the return type
   *)
   | FExpr fn ->
-    (* parameters *)
     let map = List.fold_left add_bind symbol_table fn.params in
     (* Empty function to be filled *)
     let map' = match fname with Some x -> StringMap.add x (SFunc (empty_func SVoid)) map
                                 | None -> map
-    in (* Check body's statments *)
+    in
+    (* Check body's statments *)
     let ( istmt , _ , _ ) = List.fold_left check_stmt
-        ( [] , map', Some (styp_of_typ fn.typ)) fn.body in
+        ( [] , map', Some(styp_of_typ fn.typ) ) fn.body
+    in
     (* Check return. If it is of type function, search type from statments*)
     let get_ret t = match t with
-        (* Anoynmous function need to check later*)
-        Func _ ->
-        (* Helper function for finding the return type from statment*)
+      Func _ -> (* Anoynmous function *)
+        (* Helper function for inferring the type*)
         let rec ret_search x stmt= match stmt with
           SBlock stlst -> List.fold_left ret_search x stlst
           | SReturn (t,_) -> t
@@ -103,21 +110,26 @@ and check_expr symbol_table ?fname = function
         List.fold_left ret_search SVoid istmt
       | _ -> (styp_of_typ t)
     in
-    let sty = get_ret fn.typ
-    in
-    (SFunc(empty_func SVoid), SFExpr ({
+    let sty = get_ret fn.typ in
+    let sfunc_typ = {sreturn_typ = sty; sparam_typs = List.map ( fun (ty,s) -> styp_of_typ ty) fn.params} in
+    (SFunc(sfunc_typ), SFExpr ({
       styp = sty;
       sparams = List.map (fun (xtyp, str) -> (styp_of_typ xtyp,str)) fn.params;
       sbody = List.rev istmt
     }) )
   (* Call a function. Decompose expr into SFunc *)
   | Call(expr, args) ->
-    (* May need to check args*)
+    (* left is ID *)
     let (t, se) = (match expr with
         Id(s) -> (type_of_id symbol_table s, SId s)
       | _ -> check_expr symbol_table expr)
-    in (match t with
-      SFunc(func_t) -> (func_t.sreturn_typ, SCall((t,se), List.map (check_expr symbol_table) args))
+    in
+    (match t with
+      SFunc(sfunc_t) -> (* Check if arguments are matching and return *)
+      let args_ = List.fold_left2 (fun l func_rt arg -> let (t,se) = check_expr symbol_table arg in
+      (infer_typ func_rt t,se)::l) [] sfunc_t.sparam_typs args
+      in
+      (sfunc_t.sreturn_typ, SCall((t,se), args_))
     | _ -> raise (Failure "not a function"))
   | Assign(e1,op,e2) ->
     let (lt, le') = check_expr symbol_table e1
@@ -159,7 +171,7 @@ and check_expr symbol_table ?fname = function
         SList(t) -> t
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
     in match t2 with
-        SInt _ -> (t3, SListAccess((t1, se1), (t2, se2)))
+        SInt -> (t3, SListAccess((t1, se1), (t2, se2)))
       | _ -> raise (Failure ("can't access list with non-integer type"))
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
@@ -171,25 +183,25 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       let (istmts,_,_) = List.fold_left check_stmt (curr_lst,symbol_table,return_typ) stmt_list
       in (SBlock (List.rev istmts) :: curr_lst , symbol_table,return_typ)
   | Expr(e) -> (SExpr (check_expr symbol_table e):: curr_lst, symbol_table,return_typ)
-  | Decl(t,s,e) as exp -> (* THIS MAY BE WRONG *)
+  | Decl(t,s,e) as exp ->
     (match e with
         Noexpr -> let ty = match t with
             Func _ -> raise (Failure ("Cannot declare an uninitialized function."))
           | typ -> styp_of_typ typ
         in
           (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
-      | e ->
-      let (t',e') = match t with
-          Func _ -> check_expr symbol_table e ~fname:s
+      | e -> (* initialized version *)
+      let (tr,er) = match t with (* check right side and for functions check if it a built-in function *)
+          Func _  -> check_expr symbol_table e ~fname:s
         | _ -> check_expr symbol_table e
       in
       if StringMap.mem s built_in_decls
       then raise (Failure ("Variable name cannot be a built-in function" ^ (string_of_stmt exp)))
-      else let ty = match t with
-        | Func _ -> if t' = SVoid then SFunc (empty_func SVoid) else t'
+      else let tl = match t with (* Func with *)
+        | Func func_typ -> sfunc_of_func t
         | typ -> styp_of_typ typ
       in
-        (SDecl (infer_typ ty t', s, (t',e')):: curr_lst, StringMap.add s ty symbol_table,return_typ)
+        (SDecl (infer_typ tl tr, s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
     )
   | Return  e -> let (t1,e1) = check_expr symbol_table e in
     let t = match return_typ with

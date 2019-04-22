@@ -85,6 +85,7 @@ let translate functions =
     | SListElement _ -> lst_element_t
 
     | SAny -> void_ptr_t
+    | SABSTRACT -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
 
   (* Helper funciton to retrieve a function from context*)

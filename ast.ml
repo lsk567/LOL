@@ -8,20 +8,26 @@ type typ =
   | Bool
   | String
   | Void
-  | Func
+  | Func of func_typ
   | List of typ
   | Tensor
+  | Abstract
+
+and func_typ = {
+  param_typs: typ list;
+  return_typ: typ;
+}
 
 (* operations *)
 type op = Add | Sub | Mul | Div | Equal | Neq | Less | Leq | Greater | Geq |
           And | Or | Mod | Pow | Outer | NoOp
 
-and uop = Neg | Not
+type uop = Neg | Not
 
 type bind = typ * string
 
 (* expressions *)
-and expr =
+type expr =
     IntLit of int
   | FloatLit of string
 	| BoolLit of bool
@@ -56,17 +62,6 @@ and stmt =
 type program = stmt list
 
 (* pretty-printing, should return the same code *)
-
-let rec string_of_typ = function
-    Void -> "void"
-  | Func -> "func"
-  | Int -> "int"
-  | Float -> "float"
-  | Bool -> "bool"
-  | String -> "string"
-  | List typ -> string_of_typ typ ^ "[]"
-  | Tensor -> "Tensor"
-
 let string_of_op = function
     Add -> "+"
   | Sub -> "-"
@@ -92,11 +87,22 @@ let string_of_uop = function
     Neg -> "-"
   | Not -> "!"
 
-
 (* map each element in list by function f, and join the string by s *)
 let rec string_of_list_stmt l s = String.concat s (List.map string_of_stmt l)
+and string_of_list_typ l s = String.concat s (List.map string_of_typ l)
 and string_of_list_expr l s = String.concat s (List.map string_of_expr l)
 and string_of_list_bind f l s = String.concat s (List.map f l)
+
+and string_of_typ = function
+    Void -> "void"
+  | Int -> "int"
+  | Float -> "float"
+  | Bool -> "bool"
+  | String -> "string"
+  | Func f -> "func " ^ string_of_typ f.return_typ ^ " (" ^ string_of_list_typ f.param_typs ", "  ^ ")"
+  | List typ -> "list <" ^ string_of_typ typ ^ ">"
+  | Tensor -> "Tensor"
+  | Abstract -> "abstract"
 
 and string_of_expr = function
     IntLit(l) -> string_of_int l
@@ -108,7 +114,7 @@ and string_of_expr = function
   | Binop(e1, o, e2) -> string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(uo, e) -> string_of_uop uo ^ " " ^ string_of_expr e
   | Assign(e1, o, e2) -> string_of_expr e1 ^ string_of_op o ^ "= " ^ string_of_expr e2
-  | Call(e, e_list) -> string_of_expr e ^ "(" ^ string_of_list_expr e_list ", " ^ ")"
+  | Call(e, e_list) -> string_of_expr e ^ "(" ^ string_of_list_expr e_list ", "  ^ ")"
   (* below actually is parsed with {name = e.name; param = e.params;
    * typ = e.typ; body = e.body}. See test programs for examples. *)
   | FExpr(fexpr) -> string_of_fexpr fexpr
@@ -119,11 +125,11 @@ and string_of_expr = function
   | ListLength(e) -> "len(" ^ string_of_expr e ^ ")"
 
 and string_of_fexpr fexpr =
+  let string_of_param param = let (typ, s) = param
+    in string_of_typ typ ^ " " ^ s
+  in
   "func " ^ string_of_typ fexpr.typ ^ " (" ^ string_of_list_bind string_of_param fexpr.params ", " ^")"
   ^ "{\n" ^ string_of_list_stmt fexpr.body "" ^ "}\n"
-
-and string_of_param param = let (typ, s) = param in
-  string_of_typ typ ^ " " ^ s
 
 and string_of_stmt = function
     Block(stmts) -> "{\n" ^ string_of_list_stmt stmts "" ^ "}\n"
@@ -141,5 +147,5 @@ and string_of_stmt = function
     in
     "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s1 ^ then_part
 
-let string_of_program stmts =
-  String.concat "" (List.map string_of_stmt stmts) ^ "\n"
+and string_of_program stmts =
+  string_of_list_stmt stmts "" ^ "\n"
