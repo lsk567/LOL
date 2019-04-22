@@ -64,7 +64,7 @@ list_element* list_set(list *l, void *data, int index) {
 }
 
 //append element: can be any type
-list_element* list_append(list *l, void *data) {
+void list_append(list *l, void *data) {
     list_element *le = (list_element*) malloc(sizeof(list_element));
     le->data = data;
     le->next = NULL;
@@ -78,7 +78,7 @@ list_element* list_append(list *l, void *data) {
     l->tail = le;
     l->length += 1;
 
-    return le;
+    //return le;
 }
 
 //concatenate lists
