@@ -5,6 +5,10 @@ open Sast
 module StringMap = Map.Make (String)
 
 let builtins = [
+
+  (* GSL test *)
+  ("gsl_test", SFunc({sparam_typs= []; sreturn_typ = SVoid}));
+
   ("print", SFunc({sparam_typs= [SString]; sreturn_typ = SVoid}));
   ("println", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid }));
   ("print", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid }));

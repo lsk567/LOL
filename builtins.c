@@ -4,6 +4,9 @@
 #include <math.h>
 #include <time.h>
 
+// GSL header files
+#include <gsl/gsl_sf_bessel.h>
+
 #define MAXFLOATSIZE 50
 
 typedef struct List_element {
@@ -139,7 +142,7 @@ char* str_of_int(int x) {
 }
 
 char* str_of_bool(int x) {
-  int length;
+  // int length;
   char* str;
   if (x) {
     str = malloc(sizeof("true") + 1);
@@ -211,3 +214,28 @@ int int_of_str(char *str){
   // Return result with sign
   return sign*res;
 }
+
+// GSL 
+
+/* 
+The following is an attempt to create an interface between GSL and OCaml.
+
+We will see if we can provide simplified version of GSL functions here for OCaml
+to call and store the GSL objects. 
+
+To-do:
+1. calling native GSL functions
+2. modularize builtins.c
+*/
+
+void gsl_test (char *str) {
+	double x = 5.0;
+	double y = gsl_sf_bessel_J0 (x); 
+	printf ("J0(%g) = %.18e\n", x, y); 
+	return;
+}
+
+// pipe the operator into SCall to a builtin
+// M + N => SCall (concat, M, N) concat \in builtin
+// keep Tensor as a class
+// use bitcode to translate
