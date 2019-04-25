@@ -116,7 +116,8 @@ and string_of_styp styp = match styp with
   | SListElement styp -> "slistelement (" ^ (string_of_styp styp) ^ ")"
 
 and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
-  ^ match sx with
+  ^ ( 
+    match sx with
      SIntLit(l) -> string_of_int l
    | SFloatLit(l) -> l
    | SStrLit(l) -> l
@@ -136,6 +137,7 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SListLit(sexpr_list) -> string_of_list_sexpr sexpr_list ", "
    | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]" ^ ")"
    | SListAppend(s1,s2) -> string_of_sexpr s1 ^ "Append[" ^ (string_of_sexpr s2) ^ "]"
+  ) ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in
   string_of_styp styp ^ " " ^ s
