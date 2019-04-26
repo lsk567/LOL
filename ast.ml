@@ -10,15 +10,18 @@ type typ =
   | Void
   | Func
   | List of typ
-  | Tensor
+  (* Linalg *)
+  (* | Matrix of expr * expr *)
+  | Matrix
+  | Tensor 
 
 (* operations *)
-type op = Add | Sub | Mul | Div | Equal | Neq | Less | Leq | Greater | Geq |
+and op = Add | Sub | Mul | Div | Equal | Neq | Less | Leq | Greater | Geq |
           And | Or | Mod | Pow | Outer | NoOp
 
 and uop = Neg | Not
 
-type bind = typ * string
+and bind = typ * string
 
 (* expressions *)
 and expr =
@@ -36,7 +39,12 @@ and expr =
   | ListAppend of expr * expr
   | ListLength of expr
   | FExpr of fexpr
-	| Noexpr
+  | Noexpr
+  (* Linalg *)
+  (* MatrixLit(ListLit(ListLit(FloatLit("1.0"), FloatLit("2.0")), ListLit(FloatLit("3.0"), FloatLit("4.0")))) *)
+  (* Check matrix rank and row/column count in semantics *)
+  (* | MatrixLit of expr list   *)
+  (* | TensorLit of expr list *)
 
 and fexpr = {
   	typ : typ;
@@ -66,9 +74,12 @@ let rec string_of_typ = function
   | Bool -> "bool"
   | String -> "string"
   | List typ -> string_of_typ typ ^ "[]"
+  (* Linalg *)
+  (* | Matrix(m, n) -> "Matrix" ^ "<" ^ (string_of_expr m) ^ "," ^ (string_of_expr n) ^ ">" *)
+  | Matrix -> "Matrix"
   | Tensor -> "Tensor"
 
-let string_of_op = function
+and string_of_op = function
     Add -> "+"
   | Sub -> "-"
   | Mul -> "*"
@@ -89,13 +100,13 @@ let string_of_op = function
   | Outer -> "@"
   | NoOp -> ""
 
-let string_of_uop = function
+and string_of_uop = function
     Neg -> "-"
   | Not -> "!"
 
 
 (* map each element in list by function f, and join the string by s *)
-let rec string_of_list_stmt l s = String.concat s (List.map string_of_stmt l)
+and string_of_list_stmt l s = String.concat s (List.map string_of_stmt l)
 and string_of_list_expr l s = String.concat s (List.map string_of_expr l)
 and string_of_list_bind f l s = String.concat s (List.map f l)
 

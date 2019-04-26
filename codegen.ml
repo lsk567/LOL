@@ -29,8 +29,11 @@ let translate functions =
       None -> raise (Failure "Missing implementation for struct List")
     | Some t -> t)
   and lst_element_t = L.pointer_type (match L.type_by_name llm "struct.List_element" with
-        None -> raise (Failure "Missing implementation for struct List_element")
-      | Some t -> t)
+      None -> raise (Failure "Missing implementation for struct List_element")
+    | Some t -> t)
+  and matrix_t   = L.pointer_type (match L.type_by_name llm "struct.gsl_matrix" with
+      None -> raise (Failure "Missing implementation for struct gsl_matrix")
+    | Some t -> t)
 
   (* Create the LLVM compilation module into which we will generate code *)
   and the_module = L.create_module context "LOL" in
@@ -398,13 +401,12 @@ let translate functions =
       let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
       let unused = L.build_store item data_ptr builder in
       let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
-      
-
-
-
 
       let list_append_f = get_func "list_append" the_module in
       L.build_call list_append_f [|arr_var; data|] "" builder
+
+    (* Matrix Operations *)
+    
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in

@@ -63,6 +63,8 @@ in
       (* List *)
       | (_, SEmpty) -> lt
       | (SList t1, SList t2) -> SList (infer_typ t1 t2)
+      (* Matrix *)
+      | (SMatrix, SList(SList(SFloat))) -> lt
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
 

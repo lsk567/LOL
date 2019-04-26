@@ -5,7 +5,7 @@
 
 %token APPEND
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
-%token LIST TENSOR
+%token LIST TENSOR MATRIX
 %token QUOTE COMMA DOT
 %token PLUS MINUS TIMES DIVIDE MOD OUTER POW ASSIGN
 %token PLUSASN MINUSASN TIMESASN DIVIDEASN MODASN INC DEC
@@ -102,7 +102,7 @@ expr:
   | expr OR     expr { Binop($1, Or,    $3)   }
 
   /* Assignmnent */
-  | ID ASSIGN expr    { Assign(Id($1), NoOp,$3)      }
+  | ID ASSIGN    expr { Assign(Id($1), NoOp,$3)      }
   | ID PLUSASN   expr { Assign(Id($1), Add, $3) }
   | ID MINUSASN  expr { Assign(Id($1), Sub, $3) }
   | ID TIMESASN  expr { Assign(Id($1), Mul, $3)}
@@ -123,6 +123,9 @@ expr:
   | accessor APPEND LPAREN expr RPAREN { ListAppend($1, $4) }
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
+
+  /* Matrix */
+  
 
 /* Accesors, helpful for recursive case */
 accessor:
@@ -149,7 +152,9 @@ typ:
   | STRING { String }
   | VOID   { Void }
   | FUNC  { Func } /* Anonymous function */
-  | LIST LT typ GT { List($3)}
+  | LIST LT typ GT { List($3) }
+  /* | MATRIX LT atom COMMA atom GT { Matrix($3, $5) } */
+  | MATRIX { Matrix }
   | TENSOR { Tensor }
 
 /* Helpers */

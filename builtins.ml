@@ -7,9 +7,9 @@ module StringMap = Map.Make (String)
 let builtins = [
 
   (* GSL test *)
-  ("gsl_test", SFunc({sparam_typs= []; sreturn_typ = SVoid}));
+  ("gsl_test", SFunc({sparam_typs = []; sreturn_typ = SVoid}));
 
-  ("print", SFunc({sparam_typs= [SString]; sreturn_typ = SVoid}));
+  ("print", SFunc({sparam_typs = [SString]; sreturn_typ = SVoid}));
   ("println", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid }));
   ("print", SFunc({ sparam_typs = [SString]; sreturn_typ = SVoid }));
   (* Casting *)
@@ -26,8 +26,12 @@ let builtins = [
   ("string_equals", SFunc({ sparam_typs = [SString; SString]; sreturn_typ = SInt }));
 
   (* List functions *)
-  ("list_init", SFunc({sparam_typs= []; sreturn_typ = SList (SAny) }));
-  ("list_append", SFunc({sparam_typs= [SList (SAny); SAny]; sreturn_typ = SVoid }));
-  ("list_get", SFunc({sparam_typs= [SList (SAny); SInt]; sreturn_typ = SListElement (SAny) }));
+  ("list_init", SFunc({sparam_typs = []; sreturn_typ = SList (SAny) }));
+  ("list_append", SFunc({sparam_typs = [SList (SAny); SAny]; sreturn_typ = SVoid }));
+  ("list_get", SFunc({sparam_typs = [SList (SAny); SInt]; sreturn_typ = SListElement (SAny) }));
 
+  (* Matrix functions *)
+  ("matrix_init", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix }));
+  ("matrix_get_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt]; sreturn_typ = SFloat }));
+  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt]; sreturn_typ = SVoid }));
 ]

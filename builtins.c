@@ -5,6 +5,7 @@
 #include <time.h>
 
 // GSL header files
+#include <gsl/gsl_matrix.h> // matrix
 #include <gsl/gsl_sf_bessel.h>
 
 #define MAXFLOATSIZE 50
@@ -215,9 +216,32 @@ int int_of_str(char *str){
   return sign*res;
 }
 
-// GSL 
+/*
+=====================================================
+                      Matrices
+=====================================================
+*/
 
-/* 
+// initializes an empty matrix with a certain number of rows and columns
+gsl_matrix * matrix_init(size_t m, size_t n) {
+  // allocate matrix memory
+  return gsl_matrix_calloc(m, n);
+}
+
+// get matrix element
+// double gsl_matrix_get(const gsl_matrix * m, const size_t i, const size_t j)
+double matrix_get_elem(const gsl_matrix * m, const size_t i, const size_t j) {
+  return gsl_matrix_get(m, i, j);
+}
+
+// set matrix element
+// void gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, double x)
+void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
+  gsl_matrix_set(m, i, j, x);
+}
+
+
+/*
 The following is an attempt to create an interface between GSL and OCaml.
 
 We will see if we can provide simplified version of GSL functions here for OCaml
@@ -234,6 +258,8 @@ void gsl_test (char *str) {
 	printf ("J0(%g) = %.18e\n", x, y); 
 	return;
 }
+
+
 
 // pipe the operator into SCall to a builtin
 // M + N => SCall (concat, M, N) concat \in builtin

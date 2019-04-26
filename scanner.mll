@@ -64,6 +64,7 @@ rule token = parse
 | "AND"                { AND }
 | "OR"                 { OR }
 | "List"               { LIST }
+| "Matrix"             { MATRIX }
 | "Tensor"             { TENSOR }
 | "true"|"false" as lxm           { BOOLLIT(bool_of_string lxm)  }
 | digits as lxm                   { INTLIT(int_of_string lxm) }

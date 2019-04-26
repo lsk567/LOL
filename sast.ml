@@ -16,6 +16,8 @@ type styp =
   (* Types only used for builtin fillers*)
   | SAny
   | SListElement of styp
+  (* Linalg *)
+  | SMatrix (* of sexpr * sexpr *)
 
 and sfunc_typ = {
   sparam_typs: styp list;
@@ -24,10 +26,10 @@ and sfunc_typ = {
 
 (* No need for op *)
 
-type sbind = styp * string
+and sbind = styp * string
 
 (* expressions *)
-type sexpr = styp * sx
+and sexpr = styp * sx
 
 and sx =
     SIntLit of int
@@ -47,6 +49,7 @@ and sx =
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
+  
 
 and sfexpr = {
     styp : styp;
@@ -79,6 +82,7 @@ let rec styp_of_typ typ = match typ with
   | String -> SString
   | Void -> SVoid
   | List ty -> SList (styp_of_typ ty)
+  | Matrix -> SMatrix
   | Func -> SFunc { sreturn_typ = SVoid; sparam_typs = []} (* Default SFunc to be void and no param*)
   | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
 
@@ -108,12 +112,14 @@ and string_of_styp styp = match styp with
   | SFunc(sfunc_typ) -> "sfunc " ^ string_of_styp sfunc_typ.sreturn_typ ^ "("
     ^ (String.concat "," (List.map string_of_styp sfunc_typ.sparam_typs))
     ^ ")"
-  | SList styp -> string_of_styp styp ^ "[]"
+  | SList styp -> string_of_styp styp ^ "[]" (* "SList(" ^ string_of_styp styp ^ ")" *)
   | SEmpty -> "sempty"
-  | STensor -> "tensor"
   | SABSTRACT -> "SABSTRACT"
   | SAny -> "sany"
   | SListElement styp -> "slistelement (" ^ (string_of_styp styp) ^ ")"
+  (* | SMatrix(sm, sn) -> "SMatrix" ^ "<" ^ string_of_sexpr sm ^ "," ^ string_of_sexpr sn ^ ">" *)
+  | SMatrix -> "SMatrix"
+  | STensor -> "STensor"
 
 and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
   ^ ( 
@@ -131,12 +137,13 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SCall(se, se_list) -> string_of_sexpr se ^ string_of_list_sexpr se_list ", "
    | SFExpr(sfexpr) -> string_of_sfexpr sfexpr
    | SClosure(clsr) -> "{ ind: " ^ string_of_int clsr.ind ^ ", fvs: ("
-     ^ string_of_list_sbind string_of_sparam clsr.free_vars ", " ^ ") } )"
+     ^ string_of_list_sbind string_of_sparam clsr.free_vars ", " ^ ") }"
    | SNoexpr -> ""
    (* List *)
    | SListLit(sexpr_list) -> string_of_list_sexpr sexpr_list ", "
-   | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]" ^ ")"
+   | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]"
    | SListAppend(s1,s2) -> string_of_sexpr s1 ^ "Append[" ^ (string_of_sexpr s2) ^ "]"
+
   ) ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in
