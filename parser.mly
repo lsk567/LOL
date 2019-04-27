@@ -102,7 +102,7 @@ expr:
   | expr OR     expr { Binop($1, Or,    $3)   }
 
   /* Assignmnent */
-  | ID ASSIGN    expr { Assign(Id($1), NoOp,$3)      }
+  | ID ASSIGN    expr { Assign(Id($1), NoOp,$3) }
   | ID PLUSASN   expr { Assign(Id($1), Add, $3) }
   | ID MINUSASN  expr { Assign(Id($1), Sub, $3) }
   | ID TIMESASN  expr { Assign(Id($1), Mul, $3)}
@@ -125,7 +125,12 @@ expr:
   | LPAREN expr RPAREN   { $2 }
 
   /* Matrix */
-  
+  /* No need for MatrixLit, since it is the same declaration as ListLit. 
+  The Matrix magic happens at semantics check */
+
+  /* Use a constructor format to identify matrix literals: Matrix([[1,2], [3,4]]) */
+  | MATRIX LPAREN expr RPAREN { MatrixLit([$3]) } /*{ MatrixLit(ListLit(FloatLit(1), FloatLit(2))) }*/ 
+  /* | accessor  */
 
 /* Accesors, helpful for recursive case */
 accessor:

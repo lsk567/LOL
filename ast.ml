@@ -29,7 +29,7 @@ and expr =
   | FloatLit of string
 	| BoolLit of bool
   | StrLit of string
-	| Id of string
+	| Id of string (* var name *)
   | Binop of expr * op * expr
 	| Unop of uop * expr
   | Assign of expr * op * expr
@@ -43,8 +43,12 @@ and expr =
   (* Linalg *)
   (* MatrixLit(ListLit(ListLit(FloatLit("1.0"), FloatLit("2.0")), ListLit(FloatLit("3.0"), FloatLit("4.0")))) *)
   (* Check matrix rank and row/column count in semantics *)
-  (* | MatrixLit of expr list   *)
+  (* Matrix Operations *)
+  | MatrixLit of expr list  
+  | MatrixSet of expr * int * int * float (* MatrixSet(Id(m), i, j, x) *)
+  | MatrixGet of expr * int * int (* MatrixGet(Id(m), i, j) *)
   (* | TensorLit of expr list *)
+    
 
 and fexpr = {
   	typ : typ;
@@ -77,7 +81,7 @@ let rec string_of_typ = function
   (* Linalg *)
   (* | Matrix(m, n) -> "Matrix" ^ "<" ^ (string_of_expr m) ^ "," ^ (string_of_expr n) ^ ">" *)
   | Matrix -> "Matrix"
-  | Tensor -> "Tensor"
+  (* | Tensor -> "Tensor" *)
 
 and string_of_op = function
     Add -> "+"
@@ -120,6 +124,7 @@ and string_of_expr = function
   | Binop(e1, o, e2) -> string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(uo, e) -> string_of_uop uo ^ " " ^ string_of_expr e
   | Assign(e1, o, e2) -> string_of_expr e1 ^ string_of_op o ^ "= " ^ string_of_expr e2
+    (* "Assign(" ^ string_of_expr e1 ^ "," ^ string_of_op o ^ "," ^ string_of_expr e2 ^ ")" *)
   | Call(e, e_list) -> string_of_expr e ^ "(" ^ string_of_list_expr e_list ", " ^ ")"
   (* below actually is parsed with {name = e.name; param = e.params;
    * typ = e.typ; body = e.body}. See test programs for examples. *)
@@ -130,6 +135,10 @@ and string_of_expr = function
   | ListAccess(e1,e2) -> string_of_expr e1 ^ "[" ^ (string_of_expr e2) ^ "]"
   | ListAppend(e1,e2) -> string_of_expr e1 ^ "Append[" ^ (string_of_expr e2) ^ "]"
   | ListLength(e) -> "len(" ^ string_of_expr e ^ ")"
+  (* Matrix *)
+  | MatrixLit(expr_list) -> "Matrix( " ^ string_of_list_expr expr_list ", " ^ " )"
+  | MatrixSet(m, i, j, x) -> "MatrixSet( " ^ string_of_expr m ^ ", " ^ string_of_int i ^ ", " ^ string_of_int j ^ ", " ^ string_of_float x ^ " )"
+  | MatrixGet(m, i, j) -> "MatrixGet( " ^ string_of_expr m ^ ", " ^ string_of_int i ^ ", " ^ string_of_int j ^ " )"
 
 and string_of_fexpr fexpr =
   "func " ^ string_of_typ fexpr.typ ^ " (" ^ string_of_list_bind string_of_param fexpr.params ", " ^")"

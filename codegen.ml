@@ -406,7 +406,7 @@ let translate functions =
       L.build_call list_append_f [|arr_var; data|] "" builder
 
     (* Matrix Operations *)
-    
+
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in

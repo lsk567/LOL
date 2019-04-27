@@ -19,7 +19,7 @@ let check statements =
       try StringMap.find s symbol_table
       with Not_found -> raise (Failure ("undeclared identifier " ^ s))
   in
-  let add_bind  map (ty, name) = match ty with
+  let add_bind map (ty, name) = match ty with
         Func _ -> StringMap.add name (SFunc(empty_func SVoid)) map
       | _ -> StringMap.add name (styp_of_typ ty) map
   in
@@ -30,9 +30,9 @@ let check statements =
 | SBool -> SBoolLit (false)
 | SString -> SStrLit ("")
 | SList _ -> SListLit ([])
+(* | SMatrix -> SMatrixLit ([]) *)
 | _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ "not implemented or shouldn't happen"))
-
-in
+  in
 
   (* List Helper Func*)
   let rec check_list_type symbol_table = function
@@ -45,6 +45,7 @@ in
           else raise (Failure(
               "cannot have elements of differing types " ^ string_of_styp t1 ^
               " and " ^ string_of_styp t2 ^ " in same list"))
+  
   (* Helper function for control flow checking bool *)
   and check_bool_expr symbol_table e =
     let (t',e') = check_expr symbol_table e in
@@ -61,10 +62,12 @@ in
         let infer_func = { sreturn_typ = same_ret; sparam_typs = same_args } in
         SFunc (infer_func)
       (* List *)
-      | (_, SEmpty) -> lt
+      | (_, SEmpty) -> lt (* can also apply to matrix *)
       | (SList t1, SList t2) -> SList (infer_typ t1 t2)
       (* Matrix *)
-      | (SMatrix, SList(SList(SFloat))) -> lt
+      (* Add special rule here to link Matrix and List if we were to remove matrix constructor *)
+      (* No need for (SMatrix, SMatrix) -> SMatrix, since it is taken care of below *)
+
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
 
@@ -115,10 +118,13 @@ and check_expr symbol_table ?fname = function
   (* Call a function. Decompose expr into SFunc *)
   | Call(expr, args) ->
     (* May need to check args*)
+    (* Check and extract the type and SExpr of an expr *)
     let (t, se) = (match expr with
         Id(s) -> (type_of_id symbol_table s, SId s)
       | _ -> check_expr symbol_table expr)
-    in (match t with
+    in 
+    (* Check if expr type is function *)
+    (match t with
       SFunc(func_t) -> (func_t.sreturn_typ, SCall((t,se), List.map (check_expr symbol_table) args))
     | _ -> raise (Failure "not a function"))
   | Assign(e1,op,e2) ->
@@ -162,7 +168,7 @@ and check_expr symbol_table ?fname = function
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
     in (match t2 with
         SInt -> (t3, SListAccess((t1, se1), (t2, se2)))
-      | _ -> raise (Failure ("can't access list with non-integer type")))
+      | _ -> raise (Failure ("can't access list with non-integer index type")))
   | ListAppend(e1,e2) ->
     let (t1, se1) = check_expr symbol_table e1
     and (t2, se2) = check_expr symbol_table e2
@@ -172,7 +178,12 @@ and check_expr symbol_table ?fname = function
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
     in 
     if t2 = t3 then (SVoid, SListAppend((t1, se1), (t2, se2))) else raise (Failure ("can't append list with different type"))
-    
+  (* Matrix *)
+  (* Need to check dimension *)
+  | MatrixLit (e) -> (SMatrix, SMatrixLit (List.map (check_expr symbol_table) e)) (* since in ast it is established that e is a list *)
+  (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
+  | MatrixSet (m, i, j, x) -> (SVoid, SMatrixSet ((check_expr symbol_table m), (SInt, SIntLit(i)), (SInt, SIntLit(j)), (SFloat, SFloatLit(string_of_float x))))
+  | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (SInt, SIntLit(i)), (SInt, SIntLit(j)))) 
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement

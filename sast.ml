@@ -17,7 +17,7 @@ type styp =
   | SAny
   | SListElement of styp
   (* Linalg *)
-  | SMatrix (* of sexpr * sexpr *)
+  | SMatrix
 
 and sfunc_typ = {
   sparam_typs: styp list;
@@ -46,6 +46,10 @@ and sx =
   | SListLit of sexpr list
   | SListAccess of sexpr * sexpr
   | SListAppend of sexpr * sexpr
+  (* Matrix *)
+  | SMatrixLit of sexpr list
+  | SMatrixSet of sexpr * sexpr * sexpr * sexpr (* not (sexpr * int * int * float) anymore due to casting *)
+  | SMatrixGet of sexpr * sexpr * sexpr (* not (sexpr * int * int) anymore due to casting *)
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
@@ -93,6 +97,7 @@ and typ_of_styp styp = match styp with
   | SString -> String
   | SVoid -> Void
   | SList sty -> List (typ_of_styp sty)
+  | SMatrix -> Matrix
   | SFunc sfunc_typ -> Func
   | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp of " ^ string_of_styp styp ^ " shouldn't happen"))
   | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
@@ -119,7 +124,7 @@ and string_of_styp styp = match styp with
   | SListElement styp -> "slistelement (" ^ (string_of_styp styp) ^ ")"
   (* | SMatrix(sm, sn) -> "SMatrix" ^ "<" ^ string_of_sexpr sm ^ "," ^ string_of_sexpr sn ^ ">" *)
   | SMatrix -> "SMatrix"
-  | STensor -> "STensor"
+  (* | STensor -> "STensor" *)
 
 and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
   ^ ( 
@@ -143,6 +148,12 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SListLit(sexpr_list) -> string_of_list_sexpr sexpr_list ", "
    | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]"
    | SListAppend(s1,s2) -> string_of_sexpr s1 ^ "Append[" ^ (string_of_sexpr s2) ^ "]"
+   (* Matrix *)
+   | SMatrixLit(sexpr_list) -> "SMatrixLit( " ^ string_of_list_sexpr sexpr_list ", " ^ " )"
+   | SMatrixSet(m, i, j, x) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", " 
+     ^ string_of_sexpr j ^ ", " ^ string_of_sexpr x ^ " )"
+   | SMatrixGet(m, i, j) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", " 
+     ^ string_of_sexpr j ^ " )"
 
   ) ^ ")"
 
