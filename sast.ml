@@ -48,8 +48,8 @@ and sx =
   | SListAppend of sexpr * sexpr
   (* Matrix *)
   | SMatrixLit of sexpr list
-  | SMatrixSet of sexpr * sexpr * sexpr * sexpr (* not (sexpr * int * int * float) anymore due to casting *)
-  | SMatrixGet of sexpr * sexpr * sexpr (* not (sexpr * int * int) anymore due to casting *)
+  | SMatrixSet of sexpr * sexpr * sexpr * sexpr
+  | SMatrixGet of sexpr * sexpr * sexpr
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
@@ -109,19 +109,19 @@ and string_of_list_sbind f l s = String.concat s (List.map f l)
 
 (* PRETTY PRINTING based off of printer.ml *)
 and string_of_styp styp = match styp with
-    SInt -> "sint"
-  | SFloat -> "sfloat"
-  | SString -> "sstring"
+    SInt -> "SInt"
+  | SFloat -> "SFloat"
+  | SString -> "SString"
   | SBool -> "sbool"
-  | SVoid -> "svoid"
-  | SFunc(sfunc_typ) -> "sfunc " ^ string_of_styp sfunc_typ.sreturn_typ ^ "("
+  | SVoid -> "SVoid"
+  | SFunc(sfunc_typ) -> "SFunc " ^ string_of_styp sfunc_typ.sreturn_typ ^ "("
     ^ (String.concat "," (List.map string_of_styp sfunc_typ.sparam_typs))
     ^ ")"
   | SList styp -> string_of_styp styp ^ "[]" (* "SList(" ^ string_of_styp styp ^ ")" *)
-  | SEmpty -> "sempty"
+  | SEmpty -> "SEmpty"
   | SABSTRACT -> "SABSTRACT"
-  | SAny -> "sany"
-  | SListElement styp -> "slistelement (" ^ (string_of_styp styp) ^ ")"
+  | SAny -> "SAny"
+  | SListElement styp -> "SListelement (" ^ (string_of_styp styp) ^ ")"
   (* | SMatrix(sm, sn) -> "SMatrix" ^ "<" ^ string_of_sexpr sm ^ "," ^ string_of_sexpr sn ^ ">" *)
   | SMatrix -> "SMatrix"
   (* | STensor -> "STensor" *)

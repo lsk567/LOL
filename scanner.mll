@@ -12,6 +12,8 @@ rule token = parse
 | "/*"                 { comment 0 lexbuf} (* Multi-line  Comments *)
 (* Member func *)
 | ".append"            { APPEND }
+| ".set"               { SET }
+| ".get"               { GET }
 (* Symbols *)
 | '('                  { LPAREN }
 | ')'                  { RPAREN }

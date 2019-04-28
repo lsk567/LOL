@@ -45,8 +45,8 @@ and expr =
   (* Check matrix rank and row/column count in semantics *)
   (* Matrix Operations *)
   | MatrixLit of expr list  
-  | MatrixSet of expr * int * int * float (* MatrixSet(Id(m), i, j, x) *)
-  | MatrixGet of expr * int * int (* MatrixGet(Id(m), i, j) *)
+  | MatrixSet of expr * expr * expr * expr (* MatrixSet(Id(m), i, j, x) *)
+  | MatrixGet of expr * expr * expr (* MatrixGet(Id(m), i, j) *)
   (* | TensorLit of expr list *)
     
 
@@ -123,7 +123,7 @@ and string_of_expr = function
   | Id(s) -> s
   | Binop(e1, o, e2) -> string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(uo, e) -> string_of_uop uo ^ " " ^ string_of_expr e
-  | Assign(e1, o, e2) -> string_of_expr e1 ^ string_of_op o ^ "= " ^ string_of_expr e2
+  | Assign(e1, o, e2) -> string_of_expr e1 ^ string_of_op o ^ " = " ^ string_of_expr e2
     (* "Assign(" ^ string_of_expr e1 ^ "," ^ string_of_op o ^ "," ^ string_of_expr e2 ^ ")" *)
   | Call(e, e_list) -> string_of_expr e ^ "(" ^ string_of_list_expr e_list ", " ^ ")"
   (* below actually is parsed with {name = e.name; param = e.params;
@@ -137,8 +137,8 @@ and string_of_expr = function
   | ListLength(e) -> "len(" ^ string_of_expr e ^ ")"
   (* Matrix *)
   | MatrixLit(expr_list) -> "Matrix( " ^ string_of_list_expr expr_list ", " ^ " )"
-  | MatrixSet(m, i, j, x) -> "MatrixSet( " ^ string_of_expr m ^ ", " ^ string_of_int i ^ ", " ^ string_of_int j ^ ", " ^ string_of_float x ^ " )"
-  | MatrixGet(m, i, j) -> "MatrixGet( " ^ string_of_expr m ^ ", " ^ string_of_int i ^ ", " ^ string_of_int j ^ " )"
+  | MatrixSet(m, i, j, x) -> "MatrixSet( " ^ string_of_expr m ^ ", " ^ string_of_expr i ^ ", " ^ string_of_expr j ^ ", " ^ string_of_expr x ^ " )"
+  | MatrixGet(m, i, j) -> "MatrixGet( " ^ string_of_expr m ^ ", " ^ string_of_expr i ^ ", " ^ string_of_expr j ^ " )"
 
 and string_of_fexpr fexpr =
   "func " ^ string_of_typ fexpr.typ ^ " (" ^ string_of_list_bind string_of_param fexpr.params ", " ^")"

@@ -30,8 +30,9 @@ let check statements =
 | SBool -> SBoolLit (false)
 | SString -> SStrLit ("")
 | SList _ -> SListLit ([])
+| SMatrix -> SMatrixLit ([])
 (* | SMatrix -> SMatrixLit ([]) *)
-| _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ "not implemented or shouldn't happen"))
+| _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ " not implemented or shouldn't happen"))
   in
 
   (* List Helper Func*)
@@ -182,8 +183,8 @@ and check_expr symbol_table ?fname = function
   (* Need to check dimension *)
   | MatrixLit (e) -> (SMatrix, SMatrixLit (List.map (check_expr symbol_table) e)) (* since in ast it is established that e is a list *)
   (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
-  | MatrixSet (m, i, j, x) -> (SVoid, SMatrixSet ((check_expr symbol_table m), (SInt, SIntLit(i)), (SInt, SIntLit(j)), (SFloat, SFloatLit(string_of_float x))))
-  | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (SInt, SIntLit(i)), (SInt, SIntLit(j)))) 
+  | MatrixSet (m, i, j, x) -> (SVoid, SMatrixSet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j), (check_expr symbol_table x)))
+  | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j))) 
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement
