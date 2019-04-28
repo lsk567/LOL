@@ -181,10 +181,15 @@ and check_expr symbol_table ?fname = function
     if t2 = t3 then (SVoid, SListAppend((t1, se1), (t2, se2))) else raise (Failure ("can't append list with different type"))
   (* Matrix *)
   (* Need to check dimension *)
-  | MatrixLit (e) -> (SMatrix, SMatrixLit (List.map (check_expr symbol_table) e)) (* since in ast it is established that e is a list *)
+  | MatrixLit (e) -> (SMatrix, SMatrixLit (List.map (check_mtrx_expr symbol_table) e)) (* since in ast it is established that e is a list *)
   (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
   | MatrixSet (m, i, j, x) -> (SVoid, SMatrixSet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j), (check_expr symbol_table x)))
   | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j))) 
+
+(* Helper function for converting nested ListLit to MatrixLit *)
+and check_mtrx_expr symbol_table ?fname = function
+     ListLit (l) -> (SMatrix, SMatrixLit (List.map (check_mtrx_expr symbol_table) l))
+   | _ as e -> check_expr symbol_table e
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement

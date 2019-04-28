@@ -406,6 +406,29 @@ let translate functions =
       L.build_call list_append_f [|arr_var; data|] "" builder
 
     (* Matrix Operations *)
+    (* How to get matrix dimension and increment i and j during initialization *)
+    (*
+    | SMatrixLit(contents) ->
+      let rec matrix_fill m lst i j = function
+          [] -> lst (* If rest empty, terminate and return the pointer to head *)
+        | sx :: rest ->
+          let (typ, _) = sx in
+          let data = match typ with
+            SList _  -> expr builder m sx
+          | _ -> let data = L.build_malloc (ltype_of_styp typ) "data" builder in
+              let llvalue = expr builder m sx
+              in ignore (L.build_store llvalue data builder); data
+          in
+          let matrix_set_f = get_func "matrix_set_elem" the_module in
+          let data = L.build_bitcast data void_ptr_t "data" builder in
+            ignore (L.build_call matrix_set_f [| lst; i; j; data |] "" builder);
+            (* Recursively fill the rest of the matrix *)
+            matrix_fill m lst i (j + 1) rest 
+      in
+      let matrix_init_f = get_func "matrix_init" the_module in
+      let lst = L.build_call matrix_init_f [|(* Insert matrix dimension here *)|] "matrix_init" builder in
+            ignore(matrix_fill m lst contents); lst
+      *)
 
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
