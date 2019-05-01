@@ -180,7 +180,7 @@ and check_expr symbol_table ?fname = function
     let t3 = match t1 with
         SList(t) -> t
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
-    in 
+    in
     if t2 = t3 then (SVoid, SListAppend((t1, se1), (t2, se2))) else raise (Failure ("can't append list with different type"))
   | ListLength(e) ->
     let (t1, se) = check_expr symbol_table e
@@ -188,9 +188,9 @@ and check_expr symbol_table ?fname = function
     let t2 = match t1 with
         SList(t3) -> t3
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e))
-    in 
+    in
     (SInt, SListLength((t2, se)))
-    
+
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement
@@ -201,6 +201,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       let (istmts,_,_) = List.fold_left check_stmt (curr_lst,symbol_table,return_typ) stmt_list
       in (SBlock (List.rev istmts) :: curr_lst , symbol_table,return_typ)
   | Expr(e) -> (SExpr (check_expr symbol_table e):: curr_lst, symbol_table,return_typ)
+  | Noinit -> (SNoinit::curr_lst,symbol_table,return_typ)
   | Decl(t,s,e) as exp ->
     (match e with
         Noexpr -> let ty = match t with
@@ -228,12 +229,20 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
     in (SReturn (t,e1) :: curr_lst, symbol_table,return_typ)
   | If(e,st1,st2) ->
       let (st1',_,_) = check_stmt ([],symbol_table, return_typ) st1
-      and (st2',_,_) = check_stmt ([],symbol_table,return_typ) st2
+      and (st2',_,_) = check_stmt ([],symbol_table, return_typ) st2
       in
       (SIf ( check_bool_expr symbol_table e , List.hd st1', List.hd st2')::curr_lst, symbol_table, return_typ)
-  | For(e1,e2,e3,st) ->
-      let (ist,_,_) = check_stmt ([],symbol_table,return_typ) st in
-      (SFor(check_expr symbol_table e1, check_bool_expr symbol_table e2, check_expr symbol_table e3, List.hd ist) :: curr_lst, symbol_table,return_typ)
+  | For(init,e2,e3,st) ->
+      let (ist,st1,_) = match init with
+          Noinit -> (curr_lst, symbol_table,return_typ)
+        | _ -> check_stmt ([],symbol_table,return_typ) init
+      in
+      let (ist',_,_) = check_stmt ([],st1,return_typ) st in
+      let (t1, se) = match e2 with
+          Noexpr -> check_expr st1 e2
+        | _ -> check_bool_expr st1 e2
+      in
+      (SFor(List.hd ist, (t1, se) , check_expr st1 e3, List.hd ist') :: curr_lst, symbol_table,return_typ)
   | While (p,s) -> let (is,_,_) = check_stmt ([],symbol_table,return_typ) s in
       (SWhile(check_bool_expr symbol_table p, List.hd is):: curr_lst, symbol_table,return_typ)
 in

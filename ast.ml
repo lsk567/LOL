@@ -57,8 +57,9 @@ and stmt =
   | Decl of typ * string * expr
 	| Return of expr
   | If of expr * stmt * stmt
-  | For of expr * expr * expr * stmt
+  | For of stmt * expr * expr * stmt
   | While of expr * stmt
+  | Noinit
 
 type program = stmt list
 
@@ -139,7 +140,7 @@ and string_of_stmt = function
   | Return(e) -> "return " ^ string_of_expr e ^ ";\n"
   | Decl (t, s, Noexpr) -> string_of_typ t ^ " " ^  s ^ ";\n"
   | Decl (t, s, e) -> string_of_typ t ^ " " ^ s ^ " = " ^ string_of_expr e ^ ";\n"
-  | For (e1, e2, e3, s) -> "for (" ^ string_of_expr e1 ^ " ; " ^ string_of_expr e2 ^ " ; "
+  | For (init, e2, e3, s) -> "for (" ^ string_of_stmt init ^ " ; " ^ string_of_expr e2 ^ " ; "
     ^ string_of_expr e3 ^ ") " ^ string_of_stmt s ^"\n"
   | While (e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
   | If(e, s1, fL) -> let then_part = match fL with

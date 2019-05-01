@@ -515,8 +515,8 @@ let translate functions =
       let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
       (L.builder_at_end context merge_bb, m)
     (* Implement for loops as while loops! *)
-    | SFor (e1, e2, e3, body) -> stmt builder m
-          ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+    | SFor (init, e2, e3, body) -> stmt builder m
+          ( SBlock [init ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
     | _ -> raise (Failure "stmt not implemented in codegen")
 
   in

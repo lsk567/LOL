@@ -55,9 +55,14 @@ stmt:
   /* Control Flows */
   | IF LPAREN expr RPAREN stmt false_branch
                                             { If($3, $5, $6) } /* If, else, elif stuff */
-  | FOR LPAREN expr_opt SEMI expr_opt SEMI expr_opt RPAREN stmt
+  | FOR LPAREN init_opt SEMI expr_opt SEMI expr_opt RPAREN stmt
                                             { For($3, $5, $7, $9) } /* For loop; for (;;) */
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5) } /* While loop, can be treated as a for loop */
+
+init_opt:
+    /* nothing */                     { Noinit }
+  | typ ID                            { Decl ($1,$2,Noexpr) }
+  | typ ID ASSIGN expr                { Decl ($1,$2,$4) }
 
 fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
   FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
