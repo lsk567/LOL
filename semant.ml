@@ -170,11 +170,6 @@ and check_expr symbol_table ?fname = function
     let t3 = match t1 with
         SList(t) -> t
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
-<<<<<<< HEAD
-    in match t2 with
-        SInt -> (t3, SListAccess((t1, se1), (t2, se2)))
-      | _ -> raise (Failure ("can't access list with non-integer type"))
-=======
     in (match t2 with
         SInt -> (t3, SListAccess((t1, se1), (t2, se2)))
       | _ -> raise (Failure ("can't access list with non-integer type")))
@@ -196,7 +191,6 @@ and check_expr symbol_table ?fname = function
     in 
     (SInt, SListLength((t2, se)))
     
->>>>>>> 837b55f0dd50bee2a613ba43c904ffe215ff77aa
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement
