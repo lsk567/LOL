@@ -79,7 +79,7 @@ let rec styp_of_typ typ = match typ with
   | Float -> SFloat
   | String -> SString
   | Void -> SVoid
-  | List ty -> SList (styp_of_typ ty)
+  | List ty -> if ty = Void then raise (Failure ("Cannot declare a void list")) else SList (styp_of_typ ty)
   | Func -> SFunc { sreturn_typ = SVoid; sparam_typs = []} (* Default SFunc to be void and no param*)
   | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
 
