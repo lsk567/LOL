@@ -79,10 +79,9 @@ let rec styp_of_typ typ = match typ with
   | Float -> SFloat
   | String -> SString
   | Void -> SVoid
-  | List ty -> SList (styp_of_typ ty)
+  | List ty -> if ty = Void then raise (Failure ("Cannot declare a void list")) else SList (styp_of_typ ty)
   | Func func_typ -> SFunc { sreturn_typ = styp_of_typ func_typ.return_typ; sparam_typs = List.map styp_of_typ func_typ.param_typs} (* Default SFunc to be void and no param*)
   | Abstract -> SABSTRACT
-
 
 let rec typ_of_styp styp = match styp with
     SInt -> Int
