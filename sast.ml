@@ -80,22 +80,26 @@ let rec styp_of_typ typ = match typ with
   | String -> SString
   | Void -> SVoid
   | List ty -> SList (styp_of_typ ty)
-  | Func -> SFunc { sreturn_typ = SVoid; sparam_typs = []} (* Default SFunc to be void and no param*)
-  | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
+  | Func func_typ -> SFunc { sreturn_typ = styp_of_typ func_typ.return_typ; sparam_typs = List.map styp_of_typ func_typ.param_typs} (* Default SFunc to be void and no param*)
+  | Abstract -> SABSTRACT
 
-and typ_of_styp styp = match styp with
+
+let rec typ_of_styp styp = match styp with
     SInt -> Int
   | SBool -> Bool
   | SFloat -> Float
   | SString -> String
   | SVoid -> Void
   | SList sty -> List (typ_of_styp sty)
-  | SFunc sfunc_typ -> Func
-  | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp of " ^ string_of_styp styp ^ " shouldn't happen"))
-  | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
+  | SFunc sfunc_typ -> Func { return_typ = typ_of_styp sfunc_typ.sreturn_typ; param_typs = List.map typ_of_styp sfunc_typ.sparam_typs}
+  | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp shouldn't happen"))
+
+let rec sfunc_of_func typ = match typ with
+    Func sfunc_ty -> styp_of_typ typ
+  | _ -> raise(Failure ("Not a Func"))
 
 (* Pretty printing *)
-and string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
+let rec string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
 and string_of_list_sexpr l s = String.concat s (List.map string_of_sexpr l)
 and string_of_list_sbind f l s = String.concat s (List.map f l)
 
