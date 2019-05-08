@@ -93,6 +93,7 @@ let rec dfs_sstmt funcs env sstmt =
         let (funcs1, fvs1, e') = dfs_sexpr funcs env e in
         let (funcs2, fvs2, _, s') = dfs_sstmt funcs1 env s in
         (funcs2, List.concat [fvs1; fvs2], env, SWhile(e', s'))
+      | SNostmt -> (funcs, [], env, SNostmt)
       | _ -> print_endline(string_of_sstmt sstmt); raise (Failure "not implemented in lifter")
     in
     let check_scope (_, fv) = not (StringMap.mem fv env.variables) in

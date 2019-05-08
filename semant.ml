@@ -49,7 +49,8 @@ let check statements =
   and check_bool_expr symbol_table e =
     let (t',e') = check_expr symbol_table e in
     match t' with
-        SBool -> (t',e')
+        SBool _ -> (t',e')
+      | SABSTRACT -> (SBool,SBoolLit(true))
       | _ -> raise (Failure ("expected Boolean expression in " ^ string_of_expr e ))
 
   (* Helper function for comparing left and right. If both are the same return the typ*)
@@ -79,7 +80,7 @@ and check_expr symbol_table ?fname = function
   | FloatLit l -> (SFloat, SFloatLit l)
   | BoolLit l -> (SBool, SBoolLit l)
   | StrLit l -> (SString, SStrLit l)
-  | Noexpr -> (SVoid, SNoexpr)
+  | Noexpr -> (SABSTRACT, SNoexpr)
   (* Ids and Funcs *)
   | Id s -> (type_of_id symbol_table s, SId s)
   (* Func Expressions
@@ -201,15 +202,13 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       let (istmts,_,_) = List.fold_left check_stmt (curr_lst,symbol_table,return_typ) stmt_list
       in (SBlock (List.rev istmts) :: curr_lst , symbol_table,return_typ)
   | Expr(e) -> (SExpr (check_expr symbol_table e):: curr_lst, symbol_table,return_typ)
-  | Noinit -> (SNoinit::curr_lst,symbol_table,return_typ)
-  | Decl(t,s,e) as exp ->
-    (match e with
-        Noexpr -> let ty = match t with
-            Func _ -> raise (Failure ("Cannot declare an uninitialized function."))
-          | typ -> styp_of_typ typ
-        in
-          (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
-      | e -> (* initialized version *)
+  | Decl(t,s,e) as exp -> (match e with
+      Noexpr -> let ty = match t with
+          Func _ -> raise (Failure ("Cannot declare an uninitialized function."))
+        | typ -> styp_of_typ typ
+      in
+      (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
+    | _ -> (* initialized version *)
       let (tr,er) = match t with (* check right side and for functions check if it a built-in function *)
           Func _  -> check_expr symbol_table e ~fname:s
         | _ -> check_expr symbol_table e
@@ -220,7 +219,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
         | Func func_typ -> sfunc_of_func t
         | typ -> styp_of_typ typ
       in
-        (SDecl (infer_typ tl tr, s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
+      (SDecl (infer_typ tl tr, s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
     )
   | Return  e -> let (t1,e1) = check_expr symbol_table e in
     let t = match return_typ with
@@ -233,18 +232,14 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       in
       (SIf ( check_bool_expr symbol_table e , List.hd st1', List.hd st2')::curr_lst, symbol_table, return_typ)
   | For(init,e2,e3,st) ->
-      let (ist,st1,_) = match init with
-          Noinit -> (curr_lst, symbol_table,return_typ)
-        | _ -> check_stmt ([],symbol_table,return_typ) init
-      in
-      let (ist',_,_) = check_stmt ([],st1,return_typ) st in
-      let (t1, se) = match e2 with
-          Noexpr -> check_expr st1 e2
-        | _ -> check_bool_expr st1 e2
-      in
-      (SFor(List.hd ist, (t1, se) , check_expr st1 e3, List.hd ist') :: curr_lst, symbol_table,return_typ)
+      let (ist,st1,_) = check_stmt ([],symbol_table,return_typ) init in
+      let (sst,_,_) = check_stmt ([],st1,return_typ) st in
+      let se2 = check_bool_expr st1 e2 in
+      let se3 = check_expr st1 e3 in
+      (SFor(List.hd ist, se2, se3, List.hd sst) :: curr_lst, symbol_table,return_typ)
   | While (p,s) -> let (is,_,_) = check_stmt ([],symbol_table,return_typ) s in
       (SWhile(check_bool_expr symbol_table p, List.hd is):: curr_lst, symbol_table,return_typ)
+  | Nostmt -> (SNostmt::curr_lst,symbol_table,return_typ)
 in
 
 let (stmts, _,_) = List.fold_left check_stmt ([],built_in_decls,None) statements

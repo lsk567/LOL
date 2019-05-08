@@ -59,11 +59,6 @@ stmt:
                                             { For($3, $5, $7, $9) } /* For loop; for (;;) */
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5) } /* While loop, can be treated as a for loop */
 
-init_opt:
-    /* nothing */                     { Noinit }
-  | typ ID                            { Decl ($1,$2,Noexpr) }
-  | typ ID ASSIGN expr                { Decl ($1,$2,$4) }
-
 fun_decl: /* fun int add (int i, int j) { i = i+1-1; return i+j; } */
   FUNC ret_typ ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
     { Decl( Func({param_typs = List.map (fun (ty, _) -> ty) $5;return_typ = $2 }),
@@ -193,10 +188,14 @@ param_list:
 | param_list COMMA typ ID { ($3, $4) :: $1 }
 
 
-
 args_opt:
   /* nothing */ { [] }
 | arg_list { List.rev $1 }
+
+init_opt:
+  /* nothing */                     { Nostmt }
+| typ ID                            { Decl ($1,$2, Noexpr) }
+| typ ID ASSIGN expr                { Decl ($1,$2,$4)}
 
 arg_list:
   expr { [$1] }

@@ -69,7 +69,7 @@ and sstmt =
   | SIf of sexpr * sstmt * sstmt
   | SFor of sstmt * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
-  | SNoinit
+  | SNostmt
 
 type sprogram = sstmt list
 
@@ -161,13 +161,12 @@ and string_of_sstmt = function
         | s2 -> "else\n" ^ string_of_sstmt s2
       in
       "sif (" ^ string_of_sexpr e ^ ")\n" ^ string_of_sstmt s1 ^ then_part
-    | SFor(init, se2, se3, s) ->
-        "sfor (" ^ string_of_sstmt init  ^ " ; " ^ string_of_sexpr se2 ^ " ; " ^
-        string_of_sexpr se3  ^ ") " ^ string_of_sstmt s
+    | SFor(init, se2, se3, s) -> "sfor (" ^ string_of_sstmt init  ^ " ; "
+      ^ string_of_sexpr se2 ^ " ; " ^ string_of_sexpr se3  ^ ") " ^ string_of_sstmt s
     | SWhile(e, s) -> "swhile (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
     | SDecl(t, id, (SVoid,SNoexpr)) -> string_of_styp t ^ " " ^ id ^ ";\n" (* Uninitalized *)
     | SDecl(t, id, v) -> string_of_styp t ^ " " ^ id ^ " = " ^ string_of_sexpr v ^ ";\n"
-    | SNoinit -> ""
+    | SNostmt -> ""
 
 let string_of_sprogram sast =
   String.concat "" (List.map string_of_sstmt sast) ^ "\n"

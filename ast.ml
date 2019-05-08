@@ -59,7 +59,7 @@ and stmt =
   | If of expr * stmt * stmt
   | For of stmt * expr * expr * stmt
   | While of expr * stmt
-  | Noinit
+  | Nostmt
 
 type program = stmt list
 
@@ -138,8 +138,8 @@ and string_of_stmt = function
     Block(stmts) -> "{\n" ^ string_of_list_stmt stmts "" ^ "}\n"
   | Expr(e) -> string_of_expr e ^ ";\n";
   | Return(e) -> "return " ^ string_of_expr e ^ ";\n"
-  | Decl (t, s, Noexpr) -> string_of_typ t ^ " " ^  s ^ ";\n"
-  | Decl (t, s, e) -> string_of_typ t ^ " " ^ s ^ " = " ^ string_of_expr e ^ ";\n"
+  | Decl (t, s, e) ->
+    string_of_typ t ^ " " ^ s ^ " = " ^ string_of_expr e ^ ";\n"
   | For (init, e2, e3, s) -> "for (" ^ string_of_stmt init ^ " ; " ^ string_of_expr e2 ^ " ; "
     ^ string_of_expr e3 ^ ") " ^ string_of_stmt s ^"\n"
   | While (e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
@@ -149,6 +149,7 @@ and string_of_stmt = function
       | s2 -> "else\n" ^ string_of_stmt s2
     in
     "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s1 ^ then_part
+  | Nostmt -> ""
 
 and string_of_program stmts =
   string_of_list_stmt stmts "" ^ "\n"

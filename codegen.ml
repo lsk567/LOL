@@ -517,6 +517,7 @@ let translate functions =
     (* Implement for loops as while loops! *)
     | SFor (init, e2, e3, body) -> stmt builder m
           ( SBlock [init ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+    | SNostmt -> (builder, m)
     | _ -> raise (Failure "stmt not implemented in codegen")
 
   in
