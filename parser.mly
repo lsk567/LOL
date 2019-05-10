@@ -55,7 +55,7 @@ stmt:
   /* Control Flows */
   | IF LPAREN expr RPAREN stmt false_branch
                                             { If($3, $5, $6) } /* If, else, elif stuff */
-  | FOR LPAREN expr_opt SEMI expr_opt SEMI expr_opt RPAREN stmt
+  | FOR LPAREN init_opt SEMI expr_opt SEMI expr_opt RPAREN stmt
                                             { For($3, $5, $7, $9) } /* For loop; for (;;) */
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5) } /* While loop, can be treated as a for loop */
 
@@ -188,10 +188,14 @@ param_list:
 | param_list COMMA typ ID { ($3, $4) :: $1 }
 
 
-
 args_opt:
   /* nothing */ { [] }
 | arg_list { List.rev $1 }
+
+init_opt:
+  /* nothing */                     { Nostmt }
+| typ ID                            { Decl ($1,$2, Noexpr) }
+| typ ID ASSIGN expr                { Decl ($1,$2,$4)}
 
 arg_list:
   expr { [$1] }
