@@ -20,7 +20,7 @@ let translate functions =
   (* Get types from the context *)
   let i32_t      = L.i32_type    context (* int *)
   and i1_t       = L.i1_type     context (* nool *)
-  and float_t    = L.float_type context (* float *)
+  and float_t    = L.double_type context (* float *)
   and void_t     = L.void_type   context (* void *)
   and void_ptr_t = L.pointer_type (L.i8_type context)
   and str_t      = L.pointer_type (L.i8_type context) (* string *)
@@ -529,7 +529,7 @@ let translate functions =
   add_terminal builder (match lfexpr.lreturn_typ with
         SVoid -> L.build_ret_void
       | SString -> L.build_ret (L.build_global_stringptr "" "str" builder)
-      | SFloat -> L.build_ret (L.const_float float_t 0.0)
+      | SFloat -> L.build_ret (L.const_float_of_string float_t "0.0")
       | t -> L.build_ret (L.const_int (ltype_of_styp t) 0))
 
 in
