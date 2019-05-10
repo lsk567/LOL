@@ -194,8 +194,8 @@ args_opt:
 
 init_opt:
   /* nothing */                     { Nostmt }
-| typ ID                            { Decl ($1,$2, Noexpr) }
 | typ ID ASSIGN expr                { Decl ($1,$2,$4)}
+| ID ASSIGN expr                    { Expr(Assign(Id($1), NoOp, $3))}
 
 arg_list:
   expr { [$1] }
