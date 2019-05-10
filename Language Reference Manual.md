@@ -445,7 +445,7 @@ Given the support for First-Class Functions, LOL naturally also supports Higher-
 Consider the following code snippet:
 
 ```
-func float apply_f(func f) {
+func func(float,float:float) apply_f(func f) {
     // returns an anonymous function that executes function f on two float parameters
     return func float (float i, float j) {
         return f(i) + f(j);
@@ -458,7 +458,7 @@ func float double(float x) {
 
 func float sum_of_double = apply_f(double);
 
-println(sum_of_double(3, 5)); // output: 16
+println(sum_of_double(3.0, 5.0)); // output: 16
 ```
 
 The apply_f function we implemented above is a higher-order function because it takes an operator function as an argument and uses it.
