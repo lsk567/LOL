@@ -1,4 +1,4 @@
-func int apply_f(func f) {
+func func(int,int:int) apply_f(func(int:int) f) {
     return func int (int i, int j) {
         return f(i) + f(j);
     };
