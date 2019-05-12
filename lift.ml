@@ -1,5 +1,4 @@
 open Sast
-open Builtins
 
 module StringMap = Map.Make(String)
 

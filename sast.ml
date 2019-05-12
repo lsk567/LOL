@@ -94,8 +94,8 @@ let rec typ_of_styp styp = match styp with
   | SFunc sfunc_typ -> Func { return_typ = typ_of_styp sfunc_typ.sreturn_typ; param_typs = List.map typ_of_styp sfunc_typ.sparam_typs}
   | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp shouldn't happen"))
 
-let rec sfunc_of_func typ = match typ with
-    Func sfunc_ty -> styp_of_typ typ
+let sfunc_of_func typ = match typ with
+    Func _ -> styp_of_typ typ
   | _ -> raise(Failure ("Not a Func"))
 
 (* Pretty printing *)

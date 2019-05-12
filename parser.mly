@@ -20,16 +20,18 @@
 
 %nonassoc NOELSE
 %nonassoc ELSE
-%nonassoc COLON
+%left COMMA
+%left COLON
 %right PLUSASN MINUSASN TIMESASN DIVIDEASN MODASN ASSIGN
 %left OR
 %left AND
 %left EQ NEQ
 %left LT GT LEQ GEQ
 %left PLUS MINUS NEG
-%left TIMES DIVIDE
+%left TIMES DIVIDE MOD DOT OUTER
 %left POW
 %right NOT
+%right INC DEC
 %left APPEND LENGTH
 
 %start program
