@@ -20,6 +20,7 @@
 
 %nonassoc NOELSE
 %nonassoc ELSE
+%nonassoc ELIF
 %left COMMA
 %left COLON
 %right PLUSASN MINUSASN TIMESASN DIVIDEASN MODASN ASSIGN
@@ -117,12 +118,7 @@ expr:
 
   /*List*/
   | LSQBRACE opt_items RSQBRACE { ListLit($2) }
-  | accessor ASSIGN expr    { Assign($1, NoOp, $3) }
-  | accessor PLUSASN expr   { Assign($1, Add, $3) }
-  | accessor MINUSASN expr  { Assign($1, Sub, $3) }
-  | accessor TIMESASN expr  { Assign($1, Mul, $3) }
-  | accessor DIVIDEASN expr { Assign($1, Div, $3) }
-  | accessor MODASN expr    { Assign($1, Mod, $3) }
+  
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
 
@@ -154,9 +150,8 @@ typ:
   | FLOAT { Float }
   | BOOL { Bool }
   | STRING { String }
-  | VOID   { Void }
   | FUNC LPAREN typ_opt COLON ret_typ RPAREN { Func ( { param_typs = $3; return_typ = $5 } )}
-  | FUNC  { Func ( { param_typs = []; return_typ = Abstract } ) } /* Anonymous function */
+/*  | FUNC  { Func ( { param_typs = []; return_typ = Abstract } ) } /* Anonymous function */
   | LIST LT typ GT { List($3)}
   | TENSOR { Tensor }
 
