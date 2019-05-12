@@ -157,9 +157,8 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SMatrixLit(sm) -> string_of_smatrix sm
    | SMatrixSet(m, i, j, x) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
      ^ string_of_sexpr j ^ ", " ^ string_of_sexpr x ^ " )"
-   | SMatrixGet(m, i, j) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
+   | SMatrixGet(m, i, j) -> "SMatrixGet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
      ^ string_of_sexpr j ^ " )"
-
   ) ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in

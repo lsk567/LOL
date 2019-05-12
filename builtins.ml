@@ -33,5 +33,5 @@ let builtins = [
   (* Matrix functions *)
   ("matrix_init", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix }));
   ("matrix_get_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt]; sreturn_typ = SFloat }));
-  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt]; sreturn_typ = SVoid }));
+  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt;SFloat]; sreturn_typ = SVoid }));
 ]

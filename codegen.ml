@@ -20,7 +20,7 @@ let translate functions =
   (* Get types from the context *)
   let i32_t      = L.i32_type    context (* int *)
   and i1_t       = L.i1_type     context (* nool *)
-  and float_t    = L.float_type context (* float *)
+  and float_t    = L.double_type context (* float *)
   and void_t     = L.void_type   context (* void *)
   and void_ptr_t = L.pointer_type (L.i8_type context)
   and str_t      = L.pointer_type (L.i8_type context) (* string *)
@@ -410,15 +410,10 @@ let translate functions =
       (* Function for fold_left for each SFloat, set in matrix *)
       let matrix_fill_row (m,mat,i,j) sx =
           let (typ,_) = sx in
-          let data =
-            let data = L.build_malloc (ltype_of_styp typ) "data" builder in
-            let llvalue = expr builder m sx in
-            ignore (L.build_store llvalue data builder); data
-          in
+          let data = expr builder m sx in
           let matrix_set_elem_f = get_func "matrix_set_elem" the_module in
           let jl = expr builder m (SInt,SIntLit(j)) in
           let il = expr builder m (SInt,SIntLit(i)) in
-          let data = L.build_bitcast data void_ptr_t "data" builder in
           ignore (L.build_call matrix_set_elem_f [| mat; il ; jl ; data |] "" builder);
           (m,mat,j,i+1)
       in
@@ -435,7 +430,12 @@ let translate functions =
       let mat = L.build_call matrix_init_f [|row; col|] "matrix_init" builder in
       let (_,mat,_) = List.fold_left matrix_fill (m,mat,0) sm.scontent in
       mat
-
+    | SMatrixGet(mat,i,j) ->
+      let il = expr builder m i in
+      let jl = expr builder m j in
+      let mat = expr builder m mat in
+      let matrix_get_elem_f = get_func "matrix_get_elem" the_module in
+      L.build_call matrix_get_elem_f [|mat;il;jl|] "" builder;
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in
