@@ -124,19 +124,19 @@ expr:
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
 
-  
+
   /* Matrix */
   /* Use a constructor format to identify matrix literals: Matrix([[1,2], [3,4]]) */
   /* Instantiate matrix */
-  /* Matrix([1,2]) => { MatrixLit(ListLit(FloatLit(1), FloatLit(2))) } */ 
-  | MATRIX LPAREN expr RPAREN                              { MatrixLit([$3]) } 
+  /* Matrix([1,2]) => { MatrixLit(ListLit(FloatLit(1), FloatLit(2))) } */
+  | MATRIX LPAREN opt_items RPAREN                         { MatrixLit($3) } 
   /* Get matrix element */
   | accessor LSQBRACE expr COMMA expr RSQBRACE             { MatrixGet($1, $3, $5) } /* t[1,2] */
   | accessor GET LPAREN expr COMMA expr RPAREN             { MatrixGet($1, $4, $6) } /* t.get(1,2) */
   /* Set matrix element */
   | accessor LSQBRACE expr COMMA expr RSQBRACE ASSIGN expr { MatrixSet($1, $3, $5, $8) } /* t[1,2] = 5 */
   | accessor SET LPAREN expr COMMA expr COMMA expr RPAREN  { MatrixSet($1, $4, $6, $8) } /* t.set(1,2,5) */
-  
+
 
 /* Accesors, helpful for recursive case */
 accessor:

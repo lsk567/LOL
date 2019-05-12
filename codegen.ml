@@ -86,7 +86,7 @@ let translate functions =
     | SEmpty -> void_t
     | SList _ -> list_t
     | SListElement _ -> lst_element_t
-
+    | SMatrix -> matrix_t
     | SAny -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
 
@@ -406,29 +406,35 @@ let translate functions =
       L.build_call list_append_f [|arr_var; data|] "" builder
 
     (* Matrix Operations *)
-    (* How to get matrix dimension and increment i and j during initialization *)
-    (*
-    | SMatrixLit(contents) ->
-      let rec matrix_fill m lst i j = function
-          [] -> lst (* If rest empty, terminate and return the pointer to head *)
-        | sx :: rest ->
-          let (typ, _) = sx in
-          let data = match typ with
-            SList _  -> expr builder m sx
-          | _ -> let data = L.build_malloc (ltype_of_styp typ) "data" builder in
-              let llvalue = expr builder m sx
-              in ignore (L.build_store llvalue data builder); data
+    | SMatrixLit(sm) ->
+      (* Function for fold_left for each SFloat, set in matrix *)
+      let matrix_fill_row (m,mat,i,j) sx =
+          let (typ,_) = sx in
+          let data =
+            let data = L.build_malloc (ltype_of_styp typ) "data" builder in
+            let llvalue = expr builder m sx in
+            ignore (L.build_store llvalue data builder); data
           in
-          let matrix_set_f = get_func "matrix_set_elem" the_module in
+          let matrix_set_elem_f = get_func "matrix_set_elem" the_module in
+          let jl = expr builder m (SInt,SIntLit(j)) in
+          let il = expr builder m (SInt,SIntLit(i)) in
           let data = L.build_bitcast data void_ptr_t "data" builder in
-            ignore (L.build_call matrix_set_f [| lst; i; j; data |] "" builder);
-            (* Recursively fill the rest of the matrix *)
-            matrix_fill m lst i (j + 1) rest 
+          ignore (L.build_call matrix_set_elem_f [| mat; il ; jl ; data |] "" builder);
+          (m,mat,j,i+1)
       in
+      (* Function for fold_left for each row (SList)  *)
+      let matrix_fill (m,mat,i) (typ,sx)=
+          match sx with
+              SListLit l -> let (m,mat,_,_) = List.fold_left matrix_fill_row (m,mat,i,0) l in (m,mat,i+1)
+            | _ -> raise (Failure ("Shoudn't happen"))
+      in
+
       let matrix_init_f = get_func "matrix_init" the_module in
-      let lst = L.build_call matrix_init_f [|(* Insert matrix dimension here *)|] "matrix_init" builder in
-            ignore(matrix_fill m lst contents); lst
-      *)
+      let row = expr builder m (SInt,SIntLit(sm.srow)) in
+      let col = expr builder m (SInt,SIntLit(sm.scol)) in
+      let mat = L.build_call matrix_init_f [|row; col|] "matrix_init" builder in
+      let (_,mat,_) = List.fold_left matrix_fill (m,mat,0) sm.scontent in
+      mat
 
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")

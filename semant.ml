@@ -30,7 +30,7 @@ let check statements =
 | SBool -> SBoolLit (false)
 | SString -> SStrLit ("")
 | SList _ -> SListLit ([])
-| SMatrix -> SMatrixLit ([])
+| SMatrix -> SMatrixLit ({ srow = 0; scol=0 ; scontent = [] })
 (* | SMatrix -> SMatrixLit ([]) *)
 | _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ " not implemented or shouldn't happen"))
   in
@@ -46,7 +46,7 @@ let check statements =
           else raise (Failure(
               "cannot have elements of differing types " ^ string_of_styp t1 ^
               " and " ^ string_of_styp t2 ^ " in same list"))
-  
+
   (* Helper function for control flow checking bool *)
   and check_bool_expr symbol_table e =
     let (t',e') = check_expr symbol_table e in
@@ -123,7 +123,7 @@ and check_expr symbol_table ?fname = function
     let (t, se) = (match expr with
         Id(s) -> (type_of_id symbol_table s, SId s)
       | _ -> check_expr symbol_table expr)
-    in 
+    in
     (* Check if expr type is function *)
     (match t with
       SFunc(func_t) -> (func_t.sreturn_typ, SCall((t,se), List.map (check_expr symbol_table) args))
@@ -177,19 +177,26 @@ and check_expr symbol_table ?fname = function
     let t3 = match t1 with
         SList(t) -> t
       | _ -> raise (Failure ("Not a list: " ^ string_of_expr e1))
-    in 
+    in
     if t2 = t3 then (SVoid, SListAppend((t1, se1), (t2, se2))) else raise (Failure ("can't append list with different type"))
   (* Matrix *)
   (* Need to check dimension *)
-  | MatrixLit (e) -> (SMatrix, SMatrixLit (List.map (check_mtrx_expr symbol_table) e)) (* since in ast it is established that e is a list *)
+  | MatrixLit (e) -> (* [ [Float, Float], [Float, Float], [Float, Float] ] => expr list *)
+  (* expects List (List (Float))*)
+  (* return sm , expects row to be type List(Float)*)
+  let check_row sm row = match row with
+      ListLit fl ->
+      let col_ct = if sm.scol = 0 then (List.length fl)
+        else ( if (List.length fl) = sm.scol then sm.scol else raise( Failure ("col size mismatch. Expects" ^ string_of_int sm.scol ^ "but got " ^ string_of_int (List.length fl))))
+      in
+      {srow = sm.srow+1; scol= col_ct; scontent = (check_expr symbol_table row)::sm.scontent }
+    | expr -> raise (Failure (" Row must be type ListLit, got " ^ string_of_expr expr))
+  in
+  let sm = List.fold_left check_row { srow = 0; scol=0; scontent = [] } e in
+  (SMatrix, SMatrixLit(sm))
   (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
   | MatrixSet (m, i, j, x) -> (SVoid, SMatrixSet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j), (check_expr symbol_table x)))
-  | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j))) 
-
-(* Helper function for converting nested ListLit to MatrixLit *)
-and check_mtrx_expr symbol_table ?fname = function
-     ListLit (l) -> (SMatrix, SMatrixLit (List.map (check_mtrx_expr symbol_table) l))
-   | _ as e -> check_expr symbol_table e
+  | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j)))
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement

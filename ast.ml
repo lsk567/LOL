@@ -13,7 +13,7 @@ type typ =
   (* Linalg *)
   (* | Matrix of expr * expr *)
   | Matrix
-  | Tensor 
+  | Tensor
 
 (* operations *)
 and op = Add | Sub | Mul | Div | Equal | Neq | Less | Leq | Greater | Geq |
@@ -44,11 +44,11 @@ and expr =
   (* MatrixLit(ListLit(ListLit(FloatLit("1.0"), FloatLit("2.0")), ListLit(FloatLit("3.0"), FloatLit("4.0")))) *)
   (* Check matrix rank and row/column count in semantics *)
   (* Matrix Operations *)
-  | MatrixLit of expr list  
+  | MatrixLit of expr list
   | MatrixSet of expr * expr * expr * expr (* MatrixSet(Id(m), i, j, x) *)
   | MatrixGet of expr * expr * expr (* MatrixGet(Id(m), i, j) *)
   (* | TensorLit of expr list *)
-    
+
 
 and fexpr = {
   	typ : typ;
@@ -131,7 +131,7 @@ and string_of_expr = function
   | FExpr(fexpr) -> string_of_fexpr fexpr
   | Noexpr -> ""
   (* List *)
-  | ListLit(expr_list) -> string_of_list_expr expr_list ", "
+  | ListLit(expr_list) -> "[" ^ string_of_list_expr expr_list ", " ^"]"
   | ListAccess(e1,e2) -> string_of_expr e1 ^ "[" ^ (string_of_expr e2) ^ "]"
   | ListAppend(e1,e2) -> string_of_expr e1 ^ "Append[" ^ (string_of_expr e2) ^ "]"
   | ListLength(e) -> "len(" ^ string_of_expr e ^ ")"

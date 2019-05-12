@@ -245,7 +245,7 @@ void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
 The following is an attempt to create an interface between GSL and OCaml.
 
 We will see if we can provide simplified version of GSL functions here for OCaml
-to call and store the GSL objects. 
+to call and store the GSL objects.
 
 To-do:
 1. calling native GSL functions
@@ -254,8 +254,8 @@ To-do:
 
 void gsl_test (char *str) {
 	double x = 5.0;
-	double y = gsl_sf_bessel_J0 (x); 
-	printf ("J0(%g) = %.18e\n", x, y); 
+	double y = gsl_sf_bessel_J0 (x);
+	printf ("J0(%g) = %.18e\n", x, y);
 	return;
 }
 

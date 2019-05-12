@@ -47,13 +47,18 @@ and sx =
   | SListAccess of sexpr * sexpr
   | SListAppend of sexpr * sexpr
   (* Matrix *)
-  | SMatrixLit of sexpr list
+  | SMatrixLit of smatrix
   | SMatrixSet of sexpr * sexpr * sexpr * sexpr
   | SMatrixGet of sexpr * sexpr * sexpr
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
-  
+
+and smatrix = {
+  srow : int;
+  scol : int;
+  scontent : sexpr list
+}
 
 and sfexpr = {
     styp : styp;
@@ -127,7 +132,7 @@ and string_of_styp styp = match styp with
   (* | STensor -> "STensor" *)
 
 and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
-  ^ ( 
+  ^ (
     match sx with
      SIntLit(l) -> string_of_int l
    | SFloatLit(l) -> l
@@ -149,10 +154,10 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]"
    | SListAppend(s1,s2) -> string_of_sexpr s1 ^ "Append[" ^ (string_of_sexpr s2) ^ "]"
    (* Matrix *)
-   | SMatrixLit(sexpr_list) -> "SMatrixLit( " ^ string_of_list_sexpr sexpr_list ", " ^ " )"
-   | SMatrixSet(m, i, j, x) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", " 
+   | SMatrixLit(sm) -> string_of_smatrix sm
+   | SMatrixSet(m, i, j, x) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
      ^ string_of_sexpr j ^ ", " ^ string_of_sexpr x ^ " )"
-   | SMatrixGet(m, i, j) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", " 
+   | SMatrixGet(m, i, j) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
      ^ string_of_sexpr j ^ " )"
 
   ) ^ ")"
@@ -163,6 +168,10 @@ and string_of_sparam sparam = let (styp, s) = sparam in
 and string_of_sfexpr sfexpr =
   "sfunc " ^ string_of_styp sfexpr.styp ^ " (" ^ string_of_list_sbind string_of_sparam sfexpr.sparams ", " ^")"
   ^ "{\n" ^ string_of_list_sstmt sfexpr.sbody "" ^ "}\n"
+
+(* smatrix<2,3>([1,2],[3,4])*)
+and string_of_smatrix sm =
+  "smatrix<" ^ string_of_int sm.srow ^ "," ^ string_of_int sm.scol ^ ">(" ^ string_of_list_sexpr sm.scontent "," ^ ")\n"
 
 and string_of_sstmt = function
       SBlock(sstmts) ->
