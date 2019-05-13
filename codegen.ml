@@ -86,7 +86,7 @@ let translate functions =
     | SEmpty -> void_t
     | SList _ -> list_t
     | SListElement _ -> lst_element_t
-    | SMatrix -> matrix_t
+    | SMatrix(_,_) -> matrix_t
     | SAny -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
 

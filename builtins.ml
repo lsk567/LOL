@@ -31,7 +31,7 @@ let builtins = [
   ("list_get", SFunc({sparam_typs = [SList (SAny); SInt]; sreturn_typ = SListElement (SAny) }));
 
   (* Matrix functions *)
-  ("matrix_init", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix }));
-  ("matrix_get_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt]; sreturn_typ = SFloat }));
-  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix; SInt; SInt;SFloat]; sreturn_typ = SVoid }));
+  ("matrix_init", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
+  ("matrix_get_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SFloat }));
+  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt;SFloat]; sreturn_typ = SVoid }));
 ]

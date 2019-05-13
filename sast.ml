@@ -17,7 +17,7 @@ type styp =
   | SAny
   | SListElement of styp
   (* Linalg *)
-  | SMatrix
+  | SMatrix of int * int
 
 and sfunc_typ = {
   sparam_typs: styp list;
@@ -91,7 +91,7 @@ let rec styp_of_typ typ = match typ with
   | String -> SString
   | Void -> SVoid
   | List ty -> SList (styp_of_typ ty)
-  | Matrix -> SMatrix
+  | Matrix -> SMatrix(0,0)
   | Func -> SFunc { sreturn_typ = SVoid; sparam_typs = []} (* Default SFunc to be void and no param*)
   | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
 
@@ -102,7 +102,7 @@ and typ_of_styp styp = match styp with
   | SString -> String
   | SVoid -> Void
   | SList sty -> List (typ_of_styp sty)
-  | SMatrix -> Matrix
+  | SMatrix(i,j) -> Matrix
   | SFunc sfunc_typ -> Func
   | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp of " ^ string_of_styp styp ^ " shouldn't happen"))
   | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
@@ -128,7 +128,7 @@ and string_of_styp styp = match styp with
   | SAny -> "SAny"
   | SListElement styp -> "SListelement (" ^ (string_of_styp styp) ^ ")"
   (* | SMatrix(sm, sn) -> "SMatrix" ^ "<" ^ string_of_sexpr sm ^ "," ^ string_of_sexpr sn ^ ">" *)
-  | SMatrix -> "SMatrix"
+  | SMatrix(i,j) -> "SMatrix<" ^ string_of_int i ^ "," ^ string_of_int j ^ ">"
   (* | STensor -> "STensor" *)
 
 and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "

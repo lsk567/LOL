@@ -30,7 +30,7 @@ let check statements =
 | SBool -> SBoolLit (false)
 | SString -> SStrLit ("")
 | SList _ -> SListLit ([])
-| SMatrix -> SMatrixLit ({ srow = 0; scol=0 ; scontent = [] })
+| SMatrix(i,j) -> SMatrixLit ({ srow = i; scol= j; scontent = [] })
 (* | SMatrix -> SMatrixLit ([]) *)
 | _ -> raise (Failure ("Empty of " ^ (string_of_styp styp) ^ " not implemented or shouldn't happen"))
   in
@@ -55,7 +55,7 @@ let check statements =
       | _ -> raise (Failure ("expected Boolean expression in " ^ string_of_expr e ))
 
   (* Helper function for comparing left and right. If both are the same return the typ*)
-  and infer_typ lt rt = match (lt,rt) with
+  and infer_typ lt rt= match (lt,rt) with
         (_, SVoid) -> lt
       | (SFunc f1, SFunc f2) ->
         let same_ret = infer_typ f1.sreturn_typ f2.sreturn_typ in
@@ -67,7 +67,7 @@ let check statements =
       | (SList t1, SList t2) -> SList (infer_typ t1 t2)
       (* Matrix *)
       (* Add special rule here to link Matrix and List if we were to remove matrix constructor *)
-      (* No need for (SMatrix, SMatrix) -> SMatrix, since it is taken care of below *)
+      | (SMatrix _ ,SMatrix (i,j)) -> SMatrix (i,j)
 
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
@@ -131,7 +131,6 @@ and check_expr symbol_table ?fname = function
   | Assign(e1,op,e2) ->
     let (lt, le') = check_expr symbol_table e1
     and (rt, re') = check_expr symbol_table e2 in
-    (* MAY NEED TO CHECK IF LEFT = RIGHT *)
     ((infer_typ lt rt) , SAssign((lt, le'), op, (rt, re')))
   (* Arithmetics *)
   | Binop(e1, op, e2) as e->
@@ -193,10 +192,28 @@ and check_expr symbol_table ?fname = function
     | expr -> raise (Failure (" Row must be type ListLit, got " ^ string_of_expr expr))
   in
   let sm = List.fold_left check_row { srow = 0; scol=0; scontent = [] } e in
-  (SMatrix, SMatrixLit(sm))
+  (SMatrix(sm.srow,sm.scol), SMatrixLit(sm))
   (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
-  | MatrixSet (m, i, j, x) -> (SVoid, SMatrixSet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j), (check_expr symbol_table x)))
-  | MatrixGet (m, i, j) -> (SFloat, SMatrixGet ((check_expr symbol_table m), (check_expr symbol_table i), (check_expr symbol_table j)))
+  | MatrixSet (m, i, j, x) ->
+    let (sm,si,sj) = check_matrix_idx m i j symbol_table in
+    (SVoid, SMatrixSet (sm, si, sj, (check_expr symbol_table x)))
+
+  | MatrixGet (m, i, j) ->
+    let (sm,si,sj) = check_matrix_idx m i j symbol_table in
+    (SFloat, SMatrixGet (sm, si, sj))
+
+(* Helper function for checking matrixaccess. If successful, return checked expr of m,i, and j*)
+and check_matrix_idx m i j symbol_table =
+  let (t1,se1) = check_expr symbol_table m in
+  let (t2,se2) = check_expr symbol_table i in
+  let i = match se2 with SIntLit(i) -> i | _ -> raise (Failure "Shoudn't happen") in
+  let (t3,se3) = check_expr symbol_table j in
+  let j = match se2 with SIntLit(j) -> j | _ -> raise (Failure "Shoudn't happen") in
+  let var = match se1 with SId var -> var | _ ->  raise (Failure "Shoudn't happen") in
+  let (mi,mj) = match (StringMap.find var symbol_table) with SMatrix(mi,mj) -> (mi,mj) | typ -> raise(Failure("Not calling a matrix. Got " ^ string_of_styp typ)) in
+  if i < mj && j < mj
+  then ((t1,se1),(t2,se2),(t3,se3))
+  else raise ( Failure ("Indexing Matrix out of range, expects within (" ^ string_of_int mi ^ "," ^ string_of_int mj ^ "), but indexing (" ^ string_of_int i ^ "," ^ string_of_int j ^ ")"))
 
 and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement
@@ -209,11 +226,13 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
   | Expr(e) -> (SExpr (check_expr symbol_table e):: curr_lst, symbol_table,return_typ)
   | Decl(t,s,e) as exp -> (* THIS MAY BE WRONG *)
     (match e with
-        Noexpr -> let ty = match t with
+        Noexpr ->
+        let ty = match t with
             Func _ -> raise (Failure ("Cannot declare an uninitialized function."))
+          | Matrix  -> raise (Failure ("Cannot decalre emtpy matrix"))
           | typ -> styp_of_typ typ
         in
-          (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
+        (SDecl (ty, s, (SEmpty,empty_sx ty))::curr_lst, StringMap.add s ty symbol_table,return_typ)
       | e ->
       let (t',e') = match t with
           Func _ -> check_expr symbol_table e ~fname:s
@@ -223,7 +242,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       then raise (Failure ("Variable name cannot be a built-in function" ^ (string_of_stmt exp)))
       else let ty = match t with
         | Func _ -> if t' = SVoid then SFunc (empty_func SVoid) else t'
-        | typ -> styp_of_typ typ
+        | _ -> t'
       in
         (SDecl (infer_typ ty t', s, (t',e')):: curr_lst, StringMap.add s ty symbol_table,return_typ)
     )
