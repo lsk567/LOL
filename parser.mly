@@ -131,7 +131,8 @@ expr:
   /* Matrix([1,2]) => { MatrixLit(ListLit(FloatLit(1), FloatLit(2))) } */
   | MATRIX LPAREN opt_items RPAREN                         { MatrixLit($3) }
   /* Set matrix element */
-  | accessor SET LPAREN expr COMMA expr COMMA expr RPAREN  { Assign(MatrixGet($1, $4, $6), NoOp, $8) } /* t.set(1,2,5) */
+  /* t.set(1,2,5) */
+  /* | accessor SET LPAREN expr COMMA expr COMMA expr RPAREN  { Assign(MatrixGet($1, $4, $6), NoOp, $8) }  */
 
 
 /* Accesors, helpful for recursive case */

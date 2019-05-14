@@ -415,7 +415,7 @@ let translate functions =
           let jl = expr builder m (SInt,SIntLit(j)) in
           let il = expr builder m (SInt,SIntLit(i)) in
           ignore (L.build_call matrix_set_elem_f [| mat; il ; jl ; data |] "" builder);
-          (m,mat,j,i+1)
+          (m,mat,i,j+1)
       in
       (* Function for fold_left for each row (SList)  *)
       let matrix_fill (m,mat,i) (typ,sx)=
@@ -436,6 +436,7 @@ let translate functions =
       let mat = expr builder m mat in
       let matrix_get_elem_f = get_func "matrix_get_elem" the_module in
       L.build_call matrix_get_elem_f [|mat;il;jl|] "" builder;
+
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in

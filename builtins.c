@@ -222,6 +222,25 @@ int int_of_str(char *str){
 =====================================================
 */
 
+int print_matrix(const gsl_matrix *m)
+{
+  int status, n = 0;
+
+  for (size_t i = 0; i < m->size1; i++) {
+    for (size_t j = 0; j < m->size2; j++) {
+      if ((status = printf("%g ", gsl_matrix_get(m, i, j))) < 0)
+        return -1;
+      n += status;
+    }
+
+    if ((status = printf("\n")) < 0)
+      return -1;
+    n += status;
+  }
+
+  return n;
+}
+
 // initializes an empty matrix with a certain number of rows and columns
 gsl_matrix * matrix_init(size_t m, size_t n) {
   // allocate matrix memory
@@ -237,9 +256,11 @@ double matrix_get_elem(const gsl_matrix * m, const size_t i, const size_t j) {
 // set matrix element
 // void gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, double x)
 void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
+  //printf("<%d,%d>\n",m->size1,m->size2);
+  //printf("%d,%d\n",i,j);
   gsl_matrix_set(m, i, j, x);
+  //print_matrix(m);
 }
-
 
 /*
 The following is an attempt to create an interface between GSL and OCaml.
