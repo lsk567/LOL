@@ -235,35 +235,38 @@ int printm(const gsl_matrix *m)
   int status, n = 0;
 
   for (size_t i = 0; i < m->size1; i++) {
+    printf("||\t");
     for (size_t j = 0; j < m->size2; j++) {
-      if ((status = printf("%g ", gsl_matrix_get(m, i, j))) < 0)
+      if ((status = printf("%g\t", gsl_matrix_get(m, i, j))) < 0)
         return -1;
       n += status;
     }
+    printf("||");
 
     if ((status = printf("\n")) < 0)
       return -1;
     n += status;
   }
+  printf("\n");
 
   return n;
 }
 
 // initializes an empty matrix with a certain number of rows and columns
-gsl_matrix * matrix_init(size_t m, size_t n) {
+gsl_matrix * minit(size_t m, size_t n) {
   // allocate matrix memory
   return gsl_matrix_calloc(m, n);
 }
 
 // get matrix element
 // double gsl_matrix_get(const gsl_matrix * m, const size_t i, const size_t j)
-double matrix_get_elem(const gsl_matrix * m, const size_t i, const size_t j) {
+double mget(const gsl_matrix * m, const size_t i, const size_t j) {
   return gsl_matrix_get(m, i, j);
 }
 
 // set matrix element
 // void gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, double x)
-void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
+void mset(gsl_matrix * m, const size_t i, const size_t j, double x) {
   //printf("<%d,%d>\n",m->size1,m->size2);
   //printf("%d,%d\n",i,j);
   gsl_matrix_set(m, i, j, x);
@@ -271,28 +274,81 @@ void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
 }
 
 // Add. sub. mul. div
-int matrix_add(gsl_matrix * a, const gsl_matrix * b) {
+int madd(gsl_matrix * a, const gsl_matrix * b) {
   return gsl_matrix_add(a, b);
 }
 
-int matrix_sub(gsl_matrix * a, const gsl_matrix * b) {
+int msub(gsl_matrix * a, const gsl_matrix * b) {
   return gsl_matrix_sub(a, b);
 }
 
-int matrix_mul_const(gsl_matrix * a, const double x) {
+int mmulc(gsl_matrix * a, const double x) {
   return gsl_matrix_scale(a, x);
 }
 
-int matrix_add_const(gsl_matrix * a, const double x) {
+int maddc(gsl_matrix * a, const double x) {
   return gsl_matrix_add_constant(a, x);
 }
 
-int matrix_mul_elem(gsl_matrix * a, const gsl_matrix * b) {
+int mmule(gsl_matrix * a, const gsl_matrix * b) {
   return gsl_matrix_mul_elements(a, b);
 }
 
-int matrix_div_elem(gsl_matrix * a, const gsl_matrix * b) {
+int mdive(gsl_matrix * a, const gsl_matrix * b) {
   return gsl_matrix_div_elements(a, b);
+}
+
+// swap rows and columns, transpose, copy
+int mswapr(gsl_matrix * m, size_t i, size_t j) {
+  return gsl_matrix_swap_rows(m, i, j);
+}
+
+int mswapc(gsl_matrix * m, size_t i, size_t j) {
+  return gsl_matrix_swap_columns(m, i, j);
+}
+
+gsl_matrix * mtrans(gsl_matrix * m) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size2, m->size1);
+  gsl_matrix_transpose_memcpy(newMatrix, m);
+  return newMatrix;
+}
+
+gsl_matrix * mcopy(gsl_matrix * m) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size1, m->size2);
+  gsl_matrix_memcpy(newMatrix, m);
+  return newMatrix;
+}
+
+// Matrix view
+gsl_matrix * mgetr(gsl_matrix * m, size_t row) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(1, m->size2);
+  gsl_matrix_view v = gsl_matrix_submatrix(m, row, 0, 1, m->size2);
+  gsl_matrix_memcpy(newMatrix, &v.matrix);
+  return newMatrix;
+}
+
+gsl_matrix * mgetc(gsl_matrix * m, size_t col) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size1, 1);
+  gsl_matrix_view v = gsl_matrix_submatrix(m, 0, col, m->size1, 1);
+  gsl_matrix_memcpy(newMatrix, &v.matrix);
+  return newMatrix;
+}
+
+gsl_matrix * mgetsub(gsl_matrix * m, size_t x1, size_t y1, size_t x2, size_t y2) {
+  if (x1 > x2) {
+    printf("Invalid x1 or x2! Expected x1 is less than or equal to x2.\n");
+    return NULL;
+  }
+  if (y1 > y2) {
+    printf("Invalid y1 or y2! Expected y1 is less than or equal to y2.\n");
+    return NULL;
+  }
+  int n1 = x2 - x1 + 1;
+  int n2 = y2 - y1 + 1;
+  gsl_matrix * newMatrix = gsl_matrix_calloc(n1, n2);
+  gsl_matrix_view v = gsl_matrix_submatrix(m, x1, y1, n1, n2);
+  gsl_matrix_memcpy(newMatrix, &v.matrix);
+  return newMatrix;
 }
 
 // pipe the operator into SCall to a builtin
