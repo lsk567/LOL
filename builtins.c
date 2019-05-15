@@ -262,6 +262,31 @@ void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
   //print_matrix(m);
 }
 
+// Add. sub. mul. div
+int matrix_add(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_add(a, b);
+}
+
+int matrix_sub(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_sub(a, b);
+}
+
+int matrix_mul_const(gsl_matrix * a, const double x) {
+  return gsl_matrix_scale(a, x);
+}
+
+int matrix_add_const(gsl_matrix * a, const double x) {
+  return gsl_matrix_add_constant(a, x);
+}
+
+int matrix_mul_elem(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_mul_elements(a, b);
+}
+
+int matrix_div_elem(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_div_elements(a, b);
+}
+
 /*
 The following is an attempt to create an interface between GSL and OCaml.
 

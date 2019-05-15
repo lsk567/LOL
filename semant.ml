@@ -201,6 +201,46 @@ and check_expr symbol_table ?fname = function
   | MatrixGet (m, i, j) ->
     let (sm,si,sj) = check_matrix_idx m i j symbol_table in
     (SFloat, SMatrixGet (sm, si, sj))
+  
+  | MatrixAdd (m1, m2) -> 
+    let (se1, se2) = check_two_matrices_dim symbol_table m1 m2 in
+    (SVoid, SMatrixAdd (se1, se2))
+
+  | MatrixSub (m1, m2) ->
+    let (se1, se2) = check_two_matrices_dim symbol_table m1 m2 in
+    (SVoid, SMatrixSub (se1, se2))
+
+  | MatrixMulC (m, x) ->
+    let se1 = check_expr symbol_table m in
+    let se2 = check_expr symbol_table x in
+    (SVoid, SMatrixMulC (se1, se2))
+    
+  | MatrixAddC (m, x) ->
+    let se1 = check_expr symbol_table m in
+    let se2 = check_expr symbol_table x in
+    (SVoid, SMatrixAddC (se1, se2))
+
+  | MatrixMulE (m1, m2) ->
+    let (se1, se2) = check_two_matrices_dim symbol_table m1 m2 in
+    (SVoid, SMatrixMulE (se1, se2))
+
+  | MatrixDivE (m1, m2) ->
+    let (se1, se2) = check_two_matrices_dim symbol_table m1 m2 in
+    (SVoid, SMatrixDivE (se1, se2))
+
+(* Helper function for checking equal dimensions *)
+and check_two_matrices_dim sym_table m1 m2 = 
+  let (t1, sx1) = check_expr sym_table m1 in
+  let (t2, sx2) = check_expr sym_table m2 in
+  let (row1, col1) = match t1 with
+    | SMatrix (r1, c1) -> (r1, c1)
+    | _ -> raise (Failure "Shoudn't happen") in                                                                                                                                                                     
+  let (row2, col2) = match t2 with
+    | SMatrix (r2, c2) -> (r2, c2) 
+    | _ -> raise (Failure "Shoudn't happen") in
+  if row1 = row2 && col1 = col2 then
+    ((t1, sx1), (t2, sx2))
+  else raise (Failure ("Matrix dimensions do not match."))
 
 (* Helper function for checking matrixaccess. If successful, return checked expr of m,i, and j*)
 and check_matrix_idx m i j symbol_table =

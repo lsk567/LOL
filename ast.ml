@@ -47,6 +47,12 @@ and expr =
   | MatrixLit of expr list
   | MatrixSet of expr * expr * expr * expr (* MatrixSet(Id(m), i, j, x) *)
   | MatrixGet of expr * expr * expr (* MatrixGet(Id(m), i, j) *)
+  | MatrixAdd of expr * expr
+  | MatrixSub of expr * expr
+  | MatrixMulC of expr * expr
+  | MatrixAddC of expr * expr
+  | MatrixMulE of expr * expr
+  | MatrixDivE of expr * expr
   (* | TensorLit of expr list *)
 
 
@@ -139,6 +145,12 @@ and string_of_expr = function
   | MatrixLit(expr_list) -> "Matrix( " ^ string_of_list_expr expr_list ", " ^ " )"
   | MatrixSet(m, i, j, x) -> "MatrixSet( " ^ string_of_expr m ^ ", " ^ string_of_expr i ^ ", " ^ string_of_expr j ^ ", " ^ string_of_expr x ^ " )"
   | MatrixGet(m, i, j) -> "MatrixGet( " ^ string_of_expr m ^ ", " ^ string_of_expr i ^ ", " ^ string_of_expr j ^ " )"
+  | MatrixAdd(m1, m2) -> "MatrixAdd( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
+  | MatrixSub (m1, m2) -> "MatrixSub( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
+  | MatrixMulC (m, x) -> "MatrixMulC( " ^ string_of_expr m ^ ", " ^ string_of_expr x ^ " )"
+  | MatrixAddC (m, x) -> "MatrixAddC( " ^ string_of_expr m ^ ", " ^ string_of_expr x ^ " )"
+  | MatrixMulE (m1, m2) -> "MatrixMulE( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
+  | MatrixDivE (m1, m2) -> "MatrixDivE( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
 
 and string_of_fexpr fexpr =
   "func " ^ string_of_typ fexpr.typ ^ " (" ^ string_of_list_bind string_of_param fexpr.params ", " ^")"

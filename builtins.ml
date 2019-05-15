@@ -31,7 +31,16 @@ let builtins = [
   ("list_get", SFunc({sparam_typs = [SList (SAny); SInt]; sreturn_typ = SListElement (SAny) }));
 
   (* Matrix functions *)
+  (* Basic *)
   ("matrix_init", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
   ("matrix_get_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SFloat }));
-  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt;SFloat]; sreturn_typ = SVoid }));
+  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SVoid }));
+  (* Add, sub, mul, div *)
+  ("matrix_add", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("matrix_sub", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("matrix_mul_const", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
+  ("matrix_add_const", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
+  ("matrix_mul_elem", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("matrix_div_elem", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+
 ]

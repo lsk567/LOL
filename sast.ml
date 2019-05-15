@@ -50,6 +50,12 @@ and sx =
   | SMatrixLit of smatrix
   | SMatrixSet of sexpr * sexpr * sexpr * sexpr
   | SMatrixGet of sexpr * sexpr * sexpr
+  | SMatrixAdd of sexpr * sexpr
+  | SMatrixSub of sexpr * sexpr
+  | SMatrixMulC of sexpr * sexpr
+  | SMatrixAddC of sexpr * sexpr
+  | SMatrixMulE of sexpr * sexpr
+  | SMatrixDivE of sexpr * sexpr
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
@@ -159,6 +165,12 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
      ^ string_of_sexpr j ^ ", " ^ string_of_sexpr x ^ " )"
    | SMatrixGet(m, i, j) -> "SMatrixGet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
      ^ string_of_sexpr j ^ " )"
+   | SMatrixAdd(m1, m2) -> "SMatrixAdd( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
+   | SMatrixSub (m1, m2) -> "SMatrixSub( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
+   | SMatrixMulC (m, x) -> "SMatrixMulC( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr x ^ " )"
+   | SMatrixAddC (m, x) -> "SMatrixAddC( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr x ^ " )"
+   | SMatrixMulE (m1, m2) -> "SMatrixMulE( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
+   | SMatrixDivE (m1, m2) -> "SMatrixDivE( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
   ) ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in

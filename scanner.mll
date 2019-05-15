@@ -11,9 +11,16 @@ rule token = parse
 | "//"                 { linec lexbuf } (* Single-line  Comments *)
 | "/*"                 { comment 0 lexbuf} (* Multi-line  Comments *)
 (* Member func *)
-| ".append"            { APPEND }
-| ".set"               { SET }
-| ".get"               { GET }
+| ".append"            { DAPPEND }
+| ".set"               { DSET }
+| ".get"               { DGET }
+| ".add"               { DADD }
+| ".sub"               { DSUB }
+| ".mulc"              { DMULC }
+| ".addc"              { DADDC }
+| ".mule"              { DMULE }
+| ".dive"              { DDIVE }
+
 (* Symbols *)
 | '('                  { LPAREN }
 | ')'                  { RPAREN }

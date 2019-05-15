@@ -3,7 +3,7 @@
   module StringMap = Map.Make (String)
 %}
 
-%token APPEND GET SET
+%token DAPPEND DGET DSET DADD DSUB DMULC DADDC DMULE DDIVE
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR MATRIX
 %token QUOTE COMMA DOT
@@ -29,7 +29,7 @@
 %left TIMES DIVIDE
 %left POW
 %right NOT
-%left APPEND
+%left DAPPEND
 
 %start program
 %type <Ast.program> program
@@ -120,20 +120,21 @@ expr:
   | accessor TIMESASN expr  { Assign($1, Mul, $3) }
   | accessor DIVIDEASN expr { Assign($1, Div, $3) }
   | accessor MODASN expr    { Assign($1, Mod, $3) }
-  | accessor APPEND LPAREN expr RPAREN { ListAppend($1, $4) }
+  | accessor DAPPEND LPAREN expr RPAREN { ListAppend($1, $4) }
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
 
-
   /* Matrix */
-  /* Use a constructor format to identify matrix literals: Matrix([[1,2], [3,4]]) */
-  /* Instantiate matrix */
-  /* Matrix([1,2]) => { MatrixLit(ListLit(FloatLit(1), FloatLit(2))) } */
-  | MATRIX LPAREN opt_items RPAREN                         { MatrixLit($3) }
-  /* Set matrix element */
-  /* t.set(1,2,5) */
-  /* | accessor SET LPAREN expr COMMA expr COMMA expr RPAREN  { Assign(MatrixGet($1, $4, $6), NoOp, $8) }  */
-
+  | MATRIX LPAREN opt_items RPAREN                          { MatrixLit($3) }
+  | accessor DGET LPAREN expr COMMA expr RPAREN             { MatrixGet($1, $4, $6) } /* t.get(1,2) */
+  | accessor DSET LPAREN expr COMMA expr COMMA expr RPAREN  { MatrixSet($1, $4, $6, $8) } 
+  /* Add, sub, mul, div */
+  | accessor DADD LPAREN expr RPAREN             { MatrixAdd($1, $4) }
+  | accessor DSUB LPAREN expr RPAREN             { MatrixSub($1, $4) }
+  | accessor DMULC LPAREN expr RPAREN            { MatrixMulC($1, $4) }
+  | accessor DADDC LPAREN expr RPAREN            { MatrixAddC($1, $4) }
+  | accessor DMULE LPAREN expr RPAREN            { MatrixMulE($1, $4) }
+  | accessor DDIVE LPAREN expr RPAREN            { MatrixDivE($1, $4) }
 
 /* Accesors, helpful for recursive case */
 accessor:
@@ -141,7 +142,6 @@ accessor:
   | accessor LSQBRACE expr RSQBRACE { ListAccess($1, $3) } /* l[0] */
   /* Get matrix element */
   | accessor LSQBRACE expr COMMA expr RSQBRACE             { MatrixGet($1, $3, $5) } /* t[1,2] */
-  | accessor GET LPAREN expr COMMA expr RPAREN             { MatrixGet($1, $4, $6) } /* t.get(1,2) */
   | atom { $1 }
 
 atom:
@@ -149,7 +149,7 @@ atom:
   | FLOATLIT	       { FloatLit($1) }
   | BOOLLIT          { BoolLit($1) }
   | STRLIT           { StrLit($1) }
-  | ID                { Id($1) }
+  | ID               { Id($1) }
 
 /* Types */
 ret_typ:

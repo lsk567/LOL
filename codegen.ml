@@ -430,12 +430,57 @@ let translate functions =
       let mat = L.build_call matrix_init_f [|row; col|] "matrix_init" builder in
       let (_,mat,_) = List.fold_left matrix_fill (m,mat,0) sm.scontent in
       mat
-    | SMatrixGet(mat,i,j) ->
+
+    | SMatrixGet (mat,i,j) ->
       let il = expr builder m i in
       let jl = expr builder m j in
       let mat = expr builder m mat in
       let matrix_get_elem_f = get_func "matrix_get_elem" the_module in
       L.build_call matrix_get_elem_f [|mat;il;jl|] "" builder;
+
+    | SMatrixSet (mat, i, j, x) ->
+      let matl = expr builder m mat in
+      let il = expr builder m i in
+      let jl = expr builder m j in
+      let xl = expr builder m x in
+      let matrix_set_elem_f = get_func "matrix_set_elem" the_module in
+      L.build_call matrix_set_elem_f [|matl; il; jl; xl|] "" builder
+
+    | SMatrixAdd (mat1, mat2) ->
+      let mat1l = expr builder m mat1 in
+      let mat2l = expr builder m mat2 in
+      let matrix_add_f = get_func "matrix_add" the_module in
+      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+
+    | SMatrixSub (mat1, mat2) ->
+      let mat1l = expr builder m mat1 in
+      let mat2l = expr builder m mat2 in
+      let matrix_add_f = get_func "matrix_sub" the_module in
+      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+
+    | SMatrixMulC (mat, x) ->
+      let matl = expr builder m mat in
+      let xl = expr builder m x in
+      let matrix_add_f = get_func "matrix_mul_const" the_module in
+      L.build_call matrix_add_f [|matl; xl|] "" builder
+
+    | SMatrixAddC (mat, x) ->
+      let matl = expr builder m mat in
+      let xl = expr builder m x in
+      let matrix_add_f = get_func "matrix_add_const" the_module in
+      L.build_call matrix_add_f [|matl; xl|] "" builder
+
+    | SMatrixMulE (m1, m2) ->
+      let mat1l = expr builder m m1 in
+      let mat2l = expr builder m m2 in
+      let matrix_add_f = get_func "matrix_mul_elem" the_module in
+      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+
+    | SMatrixDivE (m1, m2) ->
+      let mat1l = expr builder m m1 in
+      let mat2l = expr builder m m2 in
+      let matrix_add_f = get_func "matrix_div_elem" the_module in
+      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
 
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
