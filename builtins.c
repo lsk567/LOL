@@ -5,8 +5,8 @@
 #include <time.h>
 
 // GSL header files
-#include <gsl/gsl_matrix.h> // matrix
-#include <gsl/gsl_sf_bessel.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
 
 #define MAXFLOATSIZE 50
 
@@ -345,11 +345,31 @@ gsl_matrix * mgetsub(gsl_matrix * m, size_t x1, size_t y1, size_t x2, size_t y2)
   }
   int n1 = x2 - x1 + 1;
   int n2 = y2 - y1 + 1;
-  gsl_matrix * newMatrix = gsl_matrix_calloc(n1, n2);
+  gsl_matrix * newMatrix = gsl_matrix_alloc(n1, n2);
   gsl_matrix_view v = gsl_matrix_submatrix(m, x1, y1, n1, n2);
   gsl_matrix_memcpy(newMatrix, &v.matrix);
   return newMatrix;
 }
+
+// BLAS
+double mdot(gsl_matrix * m1, gsl_matrix * m2) {
+  // Both matrices need to have same number of columns and one row
+  double* result = malloc(sizeof(float));
+  gsl_vector_view v1_view = gsl_matrix_row(m1, 0);
+  gsl_vector_view v2_view = gsl_matrix_row(m2, 0);
+  gsl_vector * v1 = gsl_vector_alloc(v1_view.vector.size);
+  gsl_vector * v2 = gsl_vector_alloc(v2_view.vector.size);
+  gsl_vector_memcpy(v1, &v1_view.vector);
+  gsl_vector_memcpy(v2, &v2_view.vector);
+  gsl_blas_ddot(v1, v2, result);
+  double res = *result;
+  free(result);
+  free(v1);
+  free(v2);
+  return res;
+}
+
+
 
 // pipe the operator into SCall to a builtin
 // M + N => SCall (concat, M, N) concat \in builtin
