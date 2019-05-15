@@ -13,12 +13,11 @@ LLI="lli"
 LLC="llc"
 
 # Path to the C compiler
-CC="cc"
+GCC="gcc"
 
 # Path to the lol compiler.  Usually "./lol.native"
 # Try "_build/lol.native" if ocamlbuild was unable to create a symbolic link.
 LOL="./lol.native"
-#LOL="_build/lol.native"
 
 # Set time limit for all operations
 ulimit -t 30
@@ -96,8 +95,9 @@ Check() {
     generatedfiles="$generatedfiles ${basename}.ll ${basename}.s ${basename}.exe ${basename}.out" &&
     Run "$LOL" "$1" ">" "${basename}.ll" &&
     Run "$LLC" "-relocation-model=pic" "${basename}.ll" ">" "${basename}.s" &&
-    Run "$CC" "-o" "${basename}.exe" "${basename}.s" "builtins.o" "-lm" &&
-    Run "./${basename}.exe" > "${basename}.out" &&
+    # Run "$CC" "-o" "${basename}.exe" "${basename}.s" "builtins.o" "-lm" &&
+    Run "$GCC" "-o" "${basename}" "${basename}.s" "-L/usr/local/lib" "builtins.o" "-lgsl -lgslcblas -lm" &&
+    Run "./${basename}" > "${basename}.out" &&
     Compare ${basename}.out ${reffile}.out ${basename}.diff
 
     # Report the status and clean up the generated files

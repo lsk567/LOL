@@ -116,12 +116,12 @@ let rec typ_of_styp styp = match styp with
   | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp shouldn't happen"))
   | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
 
-let sfunc_of_func typ = match typ with
+and sfunc_of_func typ = match typ with
     Func _ -> styp_of_typ typ
   | _ -> raise(Failure ("Not a Func"))
 
 (* Pretty printing *)
-let rec string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
+and string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
 and string_of_list_sexpr l s = String.concat s (List.map string_of_sexpr l)
 and string_of_list_sbind f l s = String.concat s (List.map f l)
 

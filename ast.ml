@@ -82,20 +82,7 @@ and stmt =
 type program = stmt list
 
 (* pretty-printing, should return the same code *)
-let rec string_of_typ = function
-    Void -> "void"
-  | Func -> "func"
-  | Int -> "int"
-  | Float -> "float"
-  | Bool -> "bool"
-  | String -> "string"
-  | List typ -> string_of_typ typ ^ "[]"
-  (* Linalg *)
-  (* | Matrix(m, n) -> "Matrix" ^ "<" ^ (string_of_expr m) ^ "," ^ (string_of_expr n) ^ ">" *)
-  | Matrix -> "Matrix"
-  (* | Tensor -> "Tensor" *)
-
-and string_of_op = function
+let rec string_of_op = function
 
     Add -> "+"
   | Sub -> "-"
@@ -117,12 +104,12 @@ and string_of_op = function
   | Outer -> "@"
   | NoOp -> ""
 
-and string_of_uop = function
+let string_of_uop = function
     Neg -> "-"
   | Not -> "!"
 
 (* map each element in list by function f, and join the string by s *)
-and string_of_list_stmt l s = String.concat s (List.map string_of_stmt l)
+let rec string_of_list_stmt l s = String.concat s (List.map string_of_stmt l)
 and string_of_list_typ l s = String.concat s (List.map string_of_typ l)
 and string_of_list_expr l s = String.concat s (List.map string_of_expr l)
 and string_of_list_bind f l s = String.concat s (List.map f l)
@@ -135,8 +122,8 @@ and string_of_typ = function
   | String -> "string"
   | Func f -> "func " ^ string_of_typ f.return_typ ^ " (" ^ string_of_list_typ f.param_typs ", "  ^ ")"
   | List typ -> "list <" ^ string_of_typ typ ^ ">"
-  | Tensor -> "Tensor"
   | Abstract -> "abstract"
+  | Matrix -> "Matrix"
 
 and string_of_expr = function
     IntLit(l) -> string_of_int l
