@@ -46,6 +46,7 @@ and sx =
   | SListLit of sexpr list
   | SListAccess of sexpr * sexpr
   | SListAppend of sexpr * sexpr
+  | SListLength of sexpr
   (* Matrix *)
   | SMatrixLit of smatrix
   | SMatrixSet of sexpr * sexpr * sexpr * sexpr
@@ -84,8 +85,9 @@ and sstmt =
   | SDecl of styp * string * sexpr
   | SReturn of sexpr
   | SIf of sexpr * sstmt * sstmt
-  | SFor of sexpr * sexpr * sexpr * sstmt
+  | SFor of sstmt * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
+  | SNostmt
 
 type sprogram = sstmt list
 
@@ -96,12 +98,13 @@ let rec styp_of_typ typ = match typ with
   | Float -> SFloat
   | String -> SString
   | Void -> SVoid
-  | List ty -> SList (styp_of_typ ty)
+  | List ty -> if ty = Void then raise (Failure ("Cannot declare a void list")) else SList (styp_of_typ ty)
+  | Func func_typ -> SFunc { sreturn_typ = styp_of_typ func_typ.return_typ; sparam_typs = List.map styp_of_typ func_typ.param_typs} (* Default SFunc to be void and no param*)
   | Matrix -> SMatrix(0,0)
-  | Func -> SFunc { sreturn_typ = SVoid; sparam_typs = []} (* Default SFunc to be void and no param*)
+  | Abstract -> SABSTRACT
   | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
 
-and typ_of_styp styp = match styp with
+let rec typ_of_styp styp = match styp with
     SInt -> Int
   | SBool -> Bool
   | SFloat -> Float
@@ -109,12 +112,16 @@ and typ_of_styp styp = match styp with
   | SVoid -> Void
   | SList sty -> List (typ_of_styp sty)
   | SMatrix(i,j) -> Matrix
-  | SFunc sfunc_typ -> Func
-  | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp of " ^ string_of_styp styp ^ " shouldn't happen"))
+  | SFunc sfunc_typ -> Func { return_typ = typ_of_styp sfunc_typ.sreturn_typ; param_typs = List.map typ_of_styp sfunc_typ.sparam_typs}
+  | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp shouldn't happen"))
   | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
 
+let sfunc_of_func typ = match typ with
+    Func _ -> styp_of_typ typ
+  | _ -> raise(Failure ("Not a Func"))
+
 (* Pretty printing *)
-and string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
+let rec string_of_list_sstmt l s = String.concat s (List.map string_of_sstmt l)
 and string_of_list_sexpr l s = String.concat s (List.map string_of_sexpr l)
 and string_of_list_sbind f l s = String.concat s (List.map f l)
 
@@ -159,6 +166,7 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SListLit(sexpr_list) -> string_of_list_sexpr sexpr_list ", "
    | SListAccess(s1,s2) -> string_of_sexpr s1 ^ "[" ^ (string_of_sexpr s2) ^ "]"
    | SListAppend(s1,s2) -> string_of_sexpr s1 ^ "Append[" ^ (string_of_sexpr s2) ^ "]"
+   | SListLength(e) -> "len(" ^ string_of_sexpr e ^ ")"
    (* Matrix *)
    | SMatrixLit(sm) -> string_of_smatrix sm
    | SMatrixSet(m, i, j, x) -> "SMatrixSet( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr i ^ ", "
@@ -195,12 +203,12 @@ and string_of_sstmt = function
         | s2 -> "else\n" ^ string_of_sstmt s2
       in
       "sif (" ^ string_of_sexpr e ^ ")\n" ^ string_of_sstmt s1 ^ then_part
-    | SFor(se1, se2, se3, s) ->
-        "sfor (" ^ string_of_sexpr se1  ^ " ; " ^ string_of_sexpr se2 ^ " ; " ^
-        string_of_sexpr se3  ^ ") " ^ string_of_sstmt s
+    | SFor(init, se2, se3, s) -> "sfor (" ^ string_of_sstmt init  ^ " ; "
+      ^ string_of_sexpr se2 ^ " ; " ^ string_of_sexpr se3  ^ ") " ^ string_of_sstmt s
     | SWhile(e, s) -> "swhile (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
     | SDecl(t, id, (SVoid,SNoexpr)) -> string_of_styp t ^ " " ^ id ^ ";\n" (* Uninitalized *)
     | SDecl(t, id, v) -> string_of_styp t ^ " " ^ id ^ " = " ^ string_of_sexpr v ^ ";\n"
+    | SNostmt -> ""
 
 let string_of_sprogram sast =
   String.concat "" (List.map string_of_sstmt sast) ^ "\n"

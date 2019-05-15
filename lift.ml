@@ -1,5 +1,4 @@
 open Sast
-open Builtins
 
 module StringMap = Map.Make(String)
 
@@ -83,16 +82,17 @@ let rec dfs_sstmt funcs env sstmt =
       | SExpr e ->
         let (funcs1, fvs1, e1) = dfs_sexpr funcs env e in
         (funcs1, fvs1, env, SExpr(e1))
-      | SFor (e1, e2, e3, body) ->
-        let (funcs1, fvs1, e1') = dfs_sexpr funcs env e1 in
-        let (funcs2, fvs2, e2') = dfs_sexpr funcs1 env e2 in
-        let (funcs3, fvs3, e3') = dfs_sexpr funcs2 env e3 in
-        let (funcs4, fvs4, _, body') = dfs_sstmt funcs3 env body in
-        (funcs4, List.concat [fvs1; fvs2; fvs3; fvs4], env, SFor(e1', e2', e3', body'))
+      | SFor (init, e2, e3, body) ->
+        let (funcs1, fvs1, env1, init') = dfs_sstmt funcs env init in
+        let (funcs2, fvs2, e2') = dfs_sexpr funcs1 env1 e2 in
+        let (funcs3, fvs3, e3') = dfs_sexpr funcs2 env1 e3 in
+        let (funcs4, fvs4, _, body') = dfs_sstmt funcs3 env1 body in
+        (funcs4, List.concat [fvs1; fvs2; fvs3; fvs4], env, SFor(init', e2', e3', body'))
       | SWhile(e, s) ->
         let (funcs1, fvs1, e') = dfs_sexpr funcs env e in
         let (funcs2, fvs2, _, s') = dfs_sstmt funcs1 env s in
         (funcs2, List.concat [fvs1; fvs2], env, SWhile(e', s'))
+      | SNostmt -> (funcs, [], env, SNostmt)
       | _ -> print_endline(string_of_sstmt sstmt); raise (Failure "not implemented in lifter")
     in
     let check_scope (_, fv) = not (StringMap.mem fv env.variables) in

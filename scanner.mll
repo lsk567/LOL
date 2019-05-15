@@ -12,6 +12,7 @@ rule token = parse
 | "/*"                 { comment 0 lexbuf} (* Multi-line  Comments *)
 (* Member func *)
 | ".append"            { DAPPEND }
+| ".length"            { DLENGTH }
 | ".set"               { DSET }
 | ".get"               { DGET }
 | ".add"               { DADD }
@@ -28,6 +29,7 @@ rule token = parse
 | '}'                  { RBRACE }
 | '['                  { LSQBRACE }
 | ']'                  { RSQBRACE }
+| ':'                  { COLON }
 | ';'                  { SEMI }
 | ','                  { COMMA }
 | '.'                  { DOT }

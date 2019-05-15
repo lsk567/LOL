@@ -88,6 +88,7 @@ let translate functions =
     | SListElement _ -> lst_element_t
     | SMatrix(_,_) -> matrix_t
     | SAny -> void_ptr_t
+    | SABSTRACT -> void_ptr_t
     | _ -> raise (Failure "not yet implemented")
 
   (* Helper funciton to retrieve a function from context*)
@@ -388,12 +389,18 @@ let translate functions =
       let lst = L.build_call list_init_f [||] "list_init" builder in
             ignore(list_fill m lst contents); lst
     | SListAccess(arr, i) ->
+      let ltype = ltype_of_styp styp in
       let arr_var = expr builder m arr in
       let idx = expr builder m i in
       let list_access_f = get_func "list_get" the_module in
       let data_ptr = L.build_call list_access_f [|arr_var; idx|] "list_get" builder in
-      let data_ptr = L.build_bitcast data_ptr (L.pointer_type (ltype_of_styp styp)) "data" builder in
-      L.build_load data_ptr "data" builder
+      (match styp with
+        SList _ ->
+          L.build_bitcast data_ptr ltype "data" builder
+        | _ ->
+        let data_ptr = L.build_bitcast data_ptr (L.pointer_type ltype) "data" builder in
+        L.build_load data_ptr "data" builder
+      )
     | SListAppend(arr, it) ->
       let arr_var = expr builder m arr in
       let item = expr builder m it in
@@ -401,9 +408,12 @@ let translate functions =
       let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
       let unused = L.build_store item data_ptr builder in
       let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
-
       let list_append_f = get_func "list_append" the_module in
-      L.build_call list_append_f [|arr_var; data|] "" builder
+        L.build_call list_append_f [|arr_var; data|] "" builder
+    | SListLength(arr) ->
+      let arr_var = expr builder m arr in
+      let list_length_f = get_func "list_length" the_module in
+      L.build_call list_length_f [|arr_var|] "list_length" builder
 
     (* Matrix Operations *)
     | SMatrixLit(sm) ->
@@ -586,8 +596,9 @@ let translate functions =
       let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
       (L.builder_at_end context merge_bb, m)
     (* Implement for loops as while loops! *)
-    | SFor (e1, e2, e3, body) -> stmt builder m
-          ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+    | SFor (init, e2, e3, body) -> stmt builder m
+          ( SBlock [init ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+    | SNostmt -> (builder, m)
     | _ -> raise (Failure "stmt not implemented in codegen")
 
   in
@@ -599,7 +610,7 @@ let translate functions =
   add_terminal builder (match lfexpr.lreturn_typ with
         SVoid -> L.build_ret_void
       | SString -> L.build_ret (L.build_global_stringptr "" "str" builder)
-      | SFloat -> L.build_ret (L.const_float float_t 0.0)
+      | SFloat -> L.build_ret (L.const_float_of_string float_t "0.0")
       | t -> L.build_ret (L.const_int (ltype_of_styp t) 0))
 
 in
