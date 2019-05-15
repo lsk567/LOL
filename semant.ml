@@ -192,7 +192,8 @@ and check_expr symbol_table ?fname = function
     | expr -> raise (Failure (" Row must be type ListLit, got " ^ string_of_expr expr))
   in
   let sm = List.fold_left check_row { srow = 0; scol=0; scontent = [] } e in
-  (SMatrix(sm.srow,sm.scol), SMatrixLit(sm))
+  let sm_rev = { srow = sm.srow; scol = sm.scol; scontent = List.rev sm.scontent } in
+  (SMatrix(sm_rev.srow,sm_rev.scol), SMatrixLit(sm_rev))
   (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
   | MatrixSet (m, i, j, x) ->
     let (sm,si,sj) = check_matrix_idx m i j symbol_table in
