@@ -86,7 +86,7 @@ rule token = parse
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
 and comment level =
-  parse "*/" { if level == 0 then token lexbuf else comment (level - 1) lexbuf}
+    parse "*/" { if level == 0 then token lexbuf else comment (level - 1) lexbuf}
       | "/*" { comment (level + 1) lexbuf }
       | _ { comment level lexbuf }
 
