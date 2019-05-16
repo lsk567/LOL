@@ -83,7 +83,7 @@ and stmt =
 type program = stmt list
 
 (* pretty-printing, should return the same code *)
-let rec string_of_op = function
+let string_of_op = function
 
     Add -> "+"
   | Sub -> "-"
@@ -100,9 +100,6 @@ let rec string_of_op = function
   | Geq -> ">="
   | And -> "&&"
   | Or -> "||"
-  | Mod -> "%"
-  | Pow -> "^"
-  | Outer -> "@"
   | NoOp -> ""
 
 let string_of_uop = function
@@ -157,6 +154,7 @@ and string_of_expr = function
   | MatrixMulE (m1, m2) -> "MatrixMulE( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
   | MatrixDivE (m1, m2) -> "MatrixDivE( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
   | MatrixMul (m1, m2) -> "MatrixMul( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
+  | _ -> "string_of_expr not exhausive"
 
 and string_of_fexpr fexpr =
   let string_of_param param = let (typ, s) = param

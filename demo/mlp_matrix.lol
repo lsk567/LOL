@@ -32,7 +32,6 @@ func Matrix fc2 (Matrix x){
   return out;
 }
 
-
 List<Matrix> input = [Matrix([0.0, 0.0]),Matrix([0.0, 1.0]),Matrix([1.0, 0.0]),Matrix([1.0, 1.0])];
 
 for (int i = 0; i<input.length(); i++){

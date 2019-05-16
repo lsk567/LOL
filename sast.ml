@@ -11,7 +11,6 @@ type styp =
   | SFunc of sfunc_typ
   | SList of styp
   | SEmpty
-  | STensor
   | SABSTRACT
   (* Types only used for builtin fillers*)
   | SAny
@@ -105,7 +104,7 @@ let rec styp_of_typ typ = match typ with
   | Func func_typ -> SFunc { sreturn_typ = styp_of_typ func_typ.return_typ; sparam_typs = List.map styp_of_typ func_typ.param_typs} (* Default SFunc to be void and no param*)
   | Matrix -> SMatrix(6666666,6666666)
   | Abstract -> SABSTRACT
-  | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
+  (*| _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented")) *)
 
 let rec typ_of_styp styp = match styp with
     SInt -> Int
@@ -114,7 +113,7 @@ let rec typ_of_styp styp = match styp with
   | SString -> String
   | SVoid -> Void
   | SList sty -> List (typ_of_styp sty)
-  | SMatrix(i,j) -> Matrix
+  | SMatrix _ -> Matrix
   | SFunc sfunc_typ -> Func { return_typ = typ_of_styp sfunc_typ.sreturn_typ; param_typs = List.map typ_of_styp sfunc_typ.sparam_typs}
   | SEmpty | SABSTRACT | SAny -> raise(Failure ("typ_of_styp shouldn't happen"))
   | _ -> raise (Failure ("typ_of_styp for " ^ (string_of_styp styp) ^ " not implemented"))
@@ -145,7 +144,6 @@ and string_of_styp styp = match styp with
   | SListElement styp -> "SListelement (" ^ (string_of_styp styp) ^ ")"
   (* | SMatrix(sm, sn) -> "SMatrix" ^ "<" ^ string_of_sexpr sm ^ "," ^ string_of_sexpr sn ^ ">" *)
   | SMatrix(i,j) -> "SMatrix<" ^ string_of_int i ^ "," ^ string_of_int j ^ ">"
-  (* | STensor -> "STensor" *)
 
 and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
   ^ (
@@ -183,6 +181,7 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SMatrixMulE (m1, m2) -> "SMatrixMulE( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
    | SMatrixDivE (m1, m2) -> "SMatrixDivE( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
    | SMatrixMul (m1, m2) -> "SMatrixMul( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
+   | _ -> "string_of_sexpr Not Implemented"
   ) ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in

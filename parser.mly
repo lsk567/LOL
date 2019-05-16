@@ -1,6 +1,5 @@
 %{
   open Ast
-  module StringMap = Map.Make (String)
 %}
 
 %token DAPPEND DLENGTH DGET DSET DADD DSUB DMULC DADDC DMULE DDIVE DROW DCOL

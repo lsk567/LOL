@@ -2,7 +2,6 @@
 
 open Ast
 open Sast
-open Builtins
 
 module StringMap = Map.Make (String)
 
@@ -21,7 +20,7 @@ let check statements =
   in
 
   let add_bind map (ty, name) = match ty with
-        Func func_typ -> StringMap.add name (sfunc_of_func ty) map
+        Func _ -> StringMap.add name (sfunc_of_func ty) map
       | _ -> StringMap.add name (styp_of_typ ty) map
   in
   (* Helper function for empty init. Match styp to the coresponding sx*)
@@ -52,7 +51,7 @@ let check statements =
   and check_bool_expr symbol_table e =
     let (t',e') = check_expr symbol_table e in
     match t' with
-        SBool _ -> (t',e')
+        SBool -> (t',e')
       | SABSTRACT -> (SBool,SBoolLit(true))
       | _ -> raise (Failure ("expected Boolean expression in " ^ string_of_expr e ))
 
@@ -76,7 +75,7 @@ let check statements =
       | (_,SABSTRACT) -> lt
       (* Matrix *)
       (* Add special rule here to link Matrix and List if we were to remove matrix constructor *)
-      | (SMatrix _ ,SMatrix (i,j)) -> rt
+      | (SMatrix _ ,SMatrix _) -> rt
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
 
@@ -118,7 +117,7 @@ and check_expr symbol_table ?fname = function
       | _ -> (styp_of_typ t)
     in
     let sty = get_ret fn.typ in
-    let sfunc_typ = {sreturn_typ = sty; sparam_typs = List.map ( fun (ty,s) -> styp_of_typ ty) fn.params} in
+    let sfunc_typ = {sreturn_typ = sty; sparam_typs = List.map ( fun (ty,_) -> styp_of_typ ty) fn.params} in
     (SFunc(sfunc_typ), SFExpr ({
       styp = sty;
       sparams = List.map (fun (xtyp, str) -> (styp_of_typ xtyp,str)) fn.params;
@@ -271,7 +270,8 @@ and check_expr symbol_table ?fname = function
     | SMatrix (r1, c1) -> (r1, c1)
     | _ -> raise (Failure "Shoudn't happen") in
     let (row2, col2) = match t2 with
-    | SMatrix (r2, c2) -> (r2, c2) in
+    | SMatrix (r2, c2) -> (r2, c2)
+    | _ -> raise (Failure "Shoudn't happen") in
     if col1 = row2 then
       (SMatrix (row1, col2), SMatrixMul ((t1, sx1), (t2, sx2)))
     else raise (Failure ("Matrix dimensions do not match for matrix multiplication."))
@@ -306,7 +306,6 @@ and check_matrix_idx m i j symbol_table =
   ((t1,se1),(t2,se2),(t3,se3))
   else raise ( Failure ("Indexing Matrix out of range, expects within (" ^ string_of_int mi ^ "," ^ string_of_int mj ^ "), but indexing (" ^ string_of_int i ^ "," ^ string_of_int j ^ ")"))
 
-and check_expr_list symbol_table expr_list = List.map (check_expr symbol_table) expr_list
 (* Checks statement
 * Keeps a list of SAST, the context (symbol_table), and the return type
 *)
@@ -329,7 +328,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       if StringMap.mem s built_in_decls
       then raise (Failure ("Variable name cannot be a built-in function" ^ (string_of_stmt exp)))
       else let tl = match t with (* Func with *)
-        | Func func_typ -> sfunc_of_func t
+        | Func _ -> sfunc_of_func t
         | typ -> styp_of_typ typ
       in
       let inferred_typ = infer_typ tl tr in
