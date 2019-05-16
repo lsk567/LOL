@@ -119,14 +119,13 @@ expr:
 
   /*List*/
   | LSQBRACE opt_items RSQBRACE { ListLit($2) }
-  | accessor                { $1 }
-  | accessor ASSIGN expr    { Assign($1, NoOp, $3) }
-  | accessor PLUSASN expr   { Assign($1, Add, $3) }
-  | accessor MINUSASN expr  { Assign($1, Sub, $3) }
-  | accessor TIMESASN expr  { Assign($1, Mul, $3) }
-  | accessor DIVIDEASN expr { Assign($1, Div, $3) }
-  | accessor MODASN expr    { Assign($1, Mod, $3) }
-  | accessor DAPPEND LPAREN expr RPAREN { ListAppend($1, $4) }
+  | accessor2 ASSIGN expr    { Assign($1, NoOp, $3) }
+  | accessor2 PLUSASN expr   { Assign($1, Add, $3) }
+  | accessor2 MINUSASN expr  { Assign($1, Sub, $3) }
+  | accessor2 TIMESASN expr  { Assign($1, Mul, $3) }
+  | accessor2 DIVIDEASN expr { Assign($1, Div, $3) }
+  | accessor2 MODASN expr    { Assign($1, Mod, $3) }
+  
   /* Brackets for precedence */
   | LPAREN expr RPAREN   { $2 }
 
@@ -153,6 +152,15 @@ accessor:
   | accessor LSQBRACE expr COMMA expr RSQBRACE             { MatrixGet($1, $3, $5) } /* t[1,2] */
   | atom { $1 }
 
+accessor2:
+    accessor LPAREN args_opt RPAREN { Call($1, $3)  } /* fun(x) */
+  | accessor DAPPEND LPAREN expr RPAREN { ListAppend($1, $4) }
+  | accessor DLENGTH LPAREN RPAREN { ListLength($1) }
+  | accessor LSQBRACE expr RSQBRACE { ListAccess($1, $3) }
+  | accessor DROW LPAREN RPAREN      { MatrixRow($1) }
+  | accessor DCOL LPAREN RPAREN      { MatrixCol($1) }
+  | accessor LSQBRACE expr COMMA expr RSQBRACE             { MatrixGet($1, $3, $5) } /* t[1,2] */
+
 atom:
     INTLIT           { IntLit ($1) }
   | FLOATLIT	       { FloatLit($1) }
@@ -173,7 +181,6 @@ typ:
   | FLOAT { Float }
   | BOOL { Bool }
   | STRING { String }
-  | VOID   { Void }
   | FUNC LPAREN typ_opt COLON ret_typ RPAREN { Func ( { param_typs = $3; return_typ = $5 } )}
   | LIST LT typ GT { List($3) }
   /* | MATRIX LT atom COMMA atom GT { Matrix($3, $5) } */
