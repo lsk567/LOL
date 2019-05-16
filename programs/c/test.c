@@ -5,8 +5,8 @@
 #include <time.h>
 
 // GSL header files
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_blas.h>
+#include <gsl/gsl_matrix.h> // matrix
+#include <gsl/gsl_sf_bessel.h>
 
 #define MAXFLOATSIZE 50
 
@@ -221,161 +221,45 @@ int int_of_str(char *str){
                       Matrices
 =====================================================
 */
-/*
-The following is an attempt to create an interface between GSL and OCaml.
-We will see if we can provide simplified version of GSL functions here for OCaml
-to call and store the GSL objects.
-
-To-do:
-1. calling native GSL functions
-*/
-
-int printm(const gsl_matrix *m)
-{
-  int status, n = 0;
-
-  for (size_t i = 0; i < m->size1; i++) {
-    printf("||\t");
-    for (size_t j = 0; j < m->size2; j++) {
-      if ((status = printf("%g\t", gsl_matrix_get(m, i, j))) < 0)
-        return -1;
-      n += status;
-    }
-    printf("||");
-
-    if ((status = printf("\n")) < 0)
-      return -1;
-    n += status;
-  }
-  printf("\n");
-
-  return n;
-}
 
 // initializes an empty matrix with a certain number of rows and columns
-gsl_matrix * minit(size_t m, size_t n) {
+gsl_matrix * matrix_init(size_t m, size_t n) {
   // allocate matrix memory
   return gsl_matrix_calloc(m, n);
 }
 
-int matrix_row(gsl_matrix * m){
-  return m->size1;
-}
-
-int matrix_col(gsl_matrix * m){
-  return m->size2;
-}
-
 // get matrix element
 // double gsl_matrix_get(const gsl_matrix * m, const size_t i, const size_t j)
-double mget(const gsl_matrix * m, const size_t i, const size_t j) {
+double matrix_get_elem(const gsl_matrix * m, const size_t i, const size_t j) {
   return gsl_matrix_get(m, i, j);
 }
 
 // set matrix element
 // void gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, double x)
-void mset(gsl_matrix * m, const size_t i, const size_t j, double x) {
-  //printf("<%d,%d>\n",m->size1,m->size2);
-  //printf("%d,%d\n",i,j);
+void matrix_set_elem(gsl_matrix * m, const size_t i, const size_t j, double x) {
   gsl_matrix_set(m, i, j, x);
-  //print_matrix(m);
 }
 
-// Add. sub. mul. div
-int madd(gsl_matrix * a, const gsl_matrix * b) {
-  return gsl_matrix_add(a, b);
+
+/*
+The following is an attempt to create an interface between GSL and OCaml.
+
+We will see if we can provide simplified version of GSL functions here for OCaml
+to call and store the GSL objects.
+
+To-do:
+1. calling native GSL functions
+2. modularize builtins.c
+*/
+
+void gsl_test (char *str) {
+	double x = 5.0;
+	double y = gsl_sf_bessel_J0 (x);
+	printf ("J0(%g) = %.18e\n", x, y);
+	return;
 }
 
-int msub(gsl_matrix * a, const gsl_matrix * b) {
-  return gsl_matrix_sub(a, b);
-}
 
-int mmulc(gsl_matrix * a, const double x) {
-  return gsl_matrix_scale(a, x);
-}
-
-int maddc(gsl_matrix * a, const double x) {
-  return gsl_matrix_add_constant(a, x);
-}
-
-int mmule(gsl_matrix * a, const gsl_matrix * b) {
-  return gsl_matrix_mul_elements(a, b);
-}
-
-int mdive(gsl_matrix * a, const gsl_matrix * b) {
-  return gsl_matrix_div_elements(a, b);
-}
-
-// swap rows and columns, transpose, copy
-int mswapr(gsl_matrix * m, size_t i, size_t j) {
-  return gsl_matrix_swap_rows(m, i, j);
-}
-
-int mswapc(gsl_matrix * m, size_t i, size_t j) {
-  return gsl_matrix_swap_columns(m, i, j);
-}
-
-gsl_matrix * mtrans(gsl_matrix * m) {
-  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size2, m->size1);
-  gsl_matrix_transpose_memcpy(newMatrix, m);
-  return newMatrix;
-}
-
-gsl_matrix * mcopy(gsl_matrix * m) {
-  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size1, m->size2);
-  gsl_matrix_memcpy(newMatrix, m);
-  return newMatrix;
-}
-
-// Matrix view
-gsl_matrix * mgetr(gsl_matrix * m, size_t row) {
-  gsl_matrix * newMatrix = gsl_matrix_calloc(1, m->size2);
-  gsl_matrix_view v = gsl_matrix_submatrix(m, row, 0, 1, m->size2);
-  gsl_matrix_memcpy(newMatrix, &v.matrix);
-  return newMatrix;
-}
-
-gsl_matrix * mgetc(gsl_matrix * m, size_t col) {
-  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size1, 1);
-  gsl_matrix_view v = gsl_matrix_submatrix(m, 0, col, m->size1, 1);
-  gsl_matrix_memcpy(newMatrix, &v.matrix);
-  return newMatrix;
-}
-
-gsl_matrix * mgetsub(gsl_matrix * m, size_t x1, size_t y1, size_t x2, size_t y2) {
-  if (x1 > x2) {
-    printf("Invalid x1 or x2! Expected x1 is less than or equal to x2.\n");
-    return NULL;
-  }
-  if (y1 > y2) {
-    printf("Invalid y1 or y2! Expected y1 is less than or equal to y2.\n");
-    return NULL;
-  }
-  int n1 = x2 - x1 + 1;
-  int n2 = y2 - y1 + 1;
-  gsl_matrix * newMatrix = gsl_matrix_alloc(n1, n2);
-  gsl_matrix_view v = gsl_matrix_submatrix(m, x1, y1, n1, n2);
-  gsl_matrix_memcpy(newMatrix, &v.matrix);
-  return newMatrix;
-}
-
-// BLAS
-double mdot(gsl_matrix * m1, gsl_matrix * m2) {
-  // Both matrices need to have same number of columns and one row
-  double* result = malloc(sizeof(float));
-  gsl_vector_view v1_view = gsl_matrix_row(m1, 0);
-  gsl_vector_view v2_view = gsl_matrix_row(m2, 0);
-  gsl_vector * v1 = gsl_vector_alloc(v1_view.vector.size);
-  gsl_vector * v2 = gsl_vector_alloc(v2_view.vector.size);
-  gsl_vector_memcpy(v1, &v1_view.vector);
-  gsl_vector_memcpy(v2, &v2_view.vector);
-  gsl_blas_ddot(v1, v2, result);
-  double res = *result;
-  free(result);
-  free(v1);
-  free(v2);
-  return res;
-}
 
 // pipe the operator into SCall to a builtin
 // M + N => SCall (concat, M, N) concat \in builtin

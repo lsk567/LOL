@@ -32,16 +32,28 @@ let builtins = [
 
   (* Matrix functions *)
   (* Basic *)
-  ("matrix_init", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
-  ("matrix_get_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SFloat }));
-  ("matrix_set_elem", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SVoid }));
-  (* Add, sub, mul, div *)
-  ("matrix_add", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
-  ("matrix_sub", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
-  ("matrix_mul_const", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
-  ("matrix_add_const", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
-  ("matrix_mul_elem", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
-  ("matrix_div_elem", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("minit", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
+  ("mget", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SFloat }));
+  ("mset", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SVoid }));
   ("matrix_row", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
   ("matrix_col", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
+  (* Add, sub, mul, div *)
+  ("madd", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("msub", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("mmulc", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
+  ("maddc", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
+  ("mmule", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  ("mdive", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
+  (* Swap rows & cols, transpose *)
+  ("mswapr", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SVoid }));
+  ("mswapc", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SVoid }));
+  ("mtrans", SFunc({sparam_typs = [SMatrix(0, 0)]; sreturn_typ = SMatrix(0,0) }));
+  ("mcopy", SFunc({sparam_typs = [SMatrix(0, 0)]; sreturn_typ = SMatrix(0,0) }));
+  (* Matrix view *)
+  ("mgetr", SFunc({sparam_typs = [SMatrix(0, 0); SInt]; sreturn_typ = SMatrix(0,0) }));
+  ("mgetc", SFunc({sparam_typs = [SMatrix(0, 0); SInt]; sreturn_typ = SMatrix(0,0) }));
+  ("mgetsub", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
+  (* BLAS *)
+  ("mdot", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SFloat }));
+  
 ]
