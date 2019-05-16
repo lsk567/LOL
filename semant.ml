@@ -75,12 +75,12 @@ let check statements =
       | (_,SABSTRACT) -> lt
       (* Matrix *)
       (* Add special rule here to link Matrix and List if we were to remove matrix constructor *)
-      | (SMatrix _ ,SMatrix _) -> rt
+      | (SMatrix _ ,SMatrix (i,j)) -> SMatrix (i,j)
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
 
 (* Check expr. Returns sexpr, a tuple of (styp * sx) *)
-and check_expr symbol_table ?fname = function
+and check_expr ?fname symbol_table = function
     IntLit l -> (SInt, SIntLit l)
   | FloatLit l -> (SFloat, SFloatLit l)
   | BoolLit l -> (SBool, SBoolLit l)
@@ -332,7 +332,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
         | typ -> styp_of_typ typ
       in
       let inferred_typ = infer_typ tl tr in
-      (SDecl (inferred_typ, s, (tr,er)):: curr_lst, StringMap.add s inferred_typ symbol_table,return_typ)
+      (SDecl (inferred_typ, s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
     )
   | Return  e -> let (t1,e1) = check_expr symbol_table e in
     let t = match return_typ with
