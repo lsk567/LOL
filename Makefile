@@ -16,7 +16,7 @@ lol.native:
 	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis,llvm.bitreader -cflags -w,+a-4 lol.native
 
 builtins.o :
-	gcc -c builtins.c
+	gcc -Wall -I/usr/local/include -c builtins.c
 	clang -emit-llvm -o builtins.bc -c builtins.c -Wno-varargs
 
 

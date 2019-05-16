@@ -1,3 +1,23 @@
+# /_build
+# /.vscode
+# /programs/.vscode
+# **/*.s
+# **/*.ll
+# **/*
+
+*
+!/**/
+!*.*
 /_build
 /.vscode
 /programs/.vscode
+**/*.s
+**/*.ll
+**/*.bc
+**/*.o
+**/*.diff
+**/*.err
+**/*.native
+**/*.log
+**/*.output
+**/*.tab.c

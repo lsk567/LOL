@@ -11,8 +11,19 @@ rule token = parse
 | "//"                 { linec lexbuf } (* Single-line  Comments *)
 | "/*"                 { comment 0 lexbuf} (* Multi-line  Comments *)
 (* Member func *)
-| ".append"            { APPEND }
-| ".length"            { LENGTH }
+| ".append"            { DAPPEND }
+| ".length"            { DLENGTH }
+| ".col"               { DCOL }
+| ".row"               { DROW }
+| ".set"               { DSET }
+| ".get"               { DGET }
+| ".add"               { DADD }
+| ".sub"               { DSUB }
+| ".mulc"              { DMULC }
+| ".addc"              { DADDC }
+| ".mule"              { DMULE }
+| ".dive"              { DDIVE }
+
 (* Symbols *)
 | '('                  { LPAREN }
 | ')'                  { RPAREN }
@@ -20,6 +31,7 @@ rule token = parse
 | '}'                  { RBRACE }
 | '['                  { LSQBRACE }
 | ']'                  { RSQBRACE }
+| ':'                  { COLON }
 | ';'                  { SEMI }
 | ','                  { COMMA }
 | '.'                  { DOT }
@@ -32,7 +44,7 @@ rule token = parse
 | '^'                  { POW }
 | '/'                  { DIVIDE }
 | '%'                  { MOD }
-| '@'                  { OUTER }
+| '@'                  { MMUL }
 | "+="                 { PLUSASN }
 | "-="                 { MINUSASN }
 | "*="                 { TIMESASN }
@@ -65,6 +77,7 @@ rule token = parse
 | "AND"                { AND }
 | "OR"                 { OR }
 | "List"               { LIST }
+| "Matrix"             { MATRIX }
 | "Tensor"             { TENSOR }
 | "true"|"false" as lxm           { BOOLLIT(bool_of_string lxm)  }
 | digits as lxm                   { INTLIT(int_of_string lxm) }

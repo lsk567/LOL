@@ -4,6 +4,13 @@
 #include <math.h>
 #include <time.h>
 
+// GSL header files
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_sf.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_permutation.h>
+
 #define MAXFLOATSIZE 50
 
 typedef struct List_element {
@@ -139,7 +146,7 @@ char* str_of_int(int x) {
 }
 
 char* str_of_bool(int x) {
-  int length;
+  // int length;
   char* str;
   if (x) {
     str = malloc(sizeof("true") + 1);
@@ -211,3 +218,236 @@ int int_of_str(char *str){
   // Return result with sign
   return sign*res;
 }
+
+/*
+=====================================================
+                      Math
+=====================================================
+*/
+
+double exp(double x) {
+  return gsl_sf_exp(x);
+}
+
+double log(double x) {
+  return gsl_sf_log(x);
+}
+
+/*
+=====================================================
+                      Matrices
+=====================================================
+*/
+/*
+The following is an attempt to create an interface between GSL and OCaml.
+We will see if we can provide simplified version of GSL functions here for OCaml
+to call and store the GSL objects.
+
+To-do:
+1. calling native GSL functions
+*/
+
+int printm(const gsl_matrix *m)
+{
+  int status, n = 0;
+
+  for (size_t i = 0; i < m->size1; i++) {
+    printf("||\t");
+    for (size_t j = 0; j < m->size2; j++) {
+      if ((status = printf("%g\t", gsl_matrix_get(m, i, j))) < 0)
+        return -1;
+      n += status;
+    }
+    printf("||");
+
+    if ((status = printf("\n")) < 0)
+      return -1;
+    n += status;
+  }
+  printf("\n");
+
+  return n;
+}
+
+// initializes an empty matrix with a certain number of rows and columns
+gsl_matrix * minit(size_t m, size_t n) {
+  // allocate matrix memory
+  return gsl_matrix_calloc(m, n);
+}
+
+int mrow(gsl_matrix * m){
+  return m->size1;
+}
+
+int mcol(gsl_matrix * m){
+  return m->size2;
+}
+
+double mmax(gsl_matrix * m) {
+  return gsl_matrix_max(m);
+}
+
+// double mdet(gsl_matrix * m) {
+//   return gsl_linalg_LU_det(m, 1);
+// }
+
+double mdet(gsl_matrix * A) {
+  double det;
+  int signum;
+  gsl_permutation *p = gsl_permutation_alloc(A->size1);
+
+  gsl_matrix *tmpA = gsl_matrix_alloc(A->size1, A->size2);
+  gsl_matrix_memcpy(tmpA , A);
+
+  gsl_linalg_LU_decomp(tmpA , p, &signum);
+  det = gsl_linalg_LU_det(tmpA , signum);
+  gsl_permutation_free(p);
+  gsl_matrix_free(tmpA);
+
+  return det;
+}
+
+// get matrix element
+// double gsl_matrix_get(const gsl_matrix * m, const size_t i, const size_t j)
+double mget(const gsl_matrix * m, const size_t i, const size_t j) {
+  return gsl_matrix_get(m, i, j);
+}
+
+// set matrix element
+// void gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, double x)
+double mset(gsl_matrix * m, const size_t i, const size_t j, double x) {
+  //printf("<%d,%d>\n",m->size1,m->size2);
+  //printf("%d,%d\n",i,j);
+  gsl_matrix_set(m, i, j, x);
+  //print_matrix(m);
+  return x;
+}
+
+// Add. sub. mul. div
+int madd(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_add(a, b);
+}
+
+int msub(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_sub(a, b);
+}
+
+int mmulc(gsl_matrix * a, const double x) {
+  return gsl_matrix_scale(a, x);
+}
+
+int maddc(gsl_matrix * a, const double x) {
+  return gsl_matrix_add_constant(a, x);
+}
+
+int mmule(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_mul_elements(a, b);
+}
+
+int mdive(gsl_matrix * a, const gsl_matrix * b) {
+  return gsl_matrix_div_elements(a, b);
+}
+
+int mexpe(gsl_matrix * a) {
+  for (int i = 0; i < a->size1; i++) {
+    for (int j = 0; j < a->size2; j++) {
+      gsl_matrix_set(a, i, j, gsl_sf_exp(gsl_matrix_get(a, i, j)));
+    }
+  }
+  return 0;
+}
+
+int mloge(gsl_matrix * a) {
+  for (int i = 0; i < a->size1; i++) {
+    for (int j = 0; j < a->size2; j++) {
+      gsl_matrix_set(a, i, j, gsl_sf_log(gsl_matrix_get(a, i, j)));
+    }
+  }
+  return 0;
+}
+
+// swap rows and columns, transpose, copy
+int mswapr(gsl_matrix * m, size_t i, size_t j) {
+  return gsl_matrix_swap_rows(m, i, j);
+}
+
+int mswapc(gsl_matrix * m, size_t i, size_t j) {
+  return gsl_matrix_swap_columns(m, i, j);
+}
+
+gsl_matrix * mtrans(gsl_matrix * m) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size2, m->size1);
+  gsl_matrix_transpose_memcpy(newMatrix, m);
+  return newMatrix;
+}
+
+gsl_matrix * mcopy(gsl_matrix * m) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size1, m->size2);
+  gsl_matrix_memcpy(newMatrix, m);
+  return newMatrix;
+}
+
+// Matrix view
+gsl_matrix * mgetr(gsl_matrix * m, size_t row) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(1, m->size2);
+  gsl_matrix_view v = gsl_matrix_submatrix(m, row, 0, 1, m->size2);
+  gsl_matrix_memcpy(newMatrix, &v.matrix);
+  return newMatrix;
+}
+
+gsl_matrix * mgetc(gsl_matrix * m, size_t col) {
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m->size1, 1);
+  gsl_matrix_view v = gsl_matrix_submatrix(m, 0, col, m->size1, 1);
+  gsl_matrix_memcpy(newMatrix, &v.matrix);
+  return newMatrix;
+}
+
+gsl_matrix * mgetsub(gsl_matrix * m, size_t x1, size_t y1, size_t x2, size_t y2) {
+  if (x1 > x2) {
+    printf("Invalid x1 or x2! Expected x1 is less than or equal to x2.\n");
+    return NULL;
+  }
+  if (y1 > y2) {
+    printf("Invalid y1 or y2! Expected y1 is less than or equal to y2.\n");
+    return NULL;
+  }
+  int n1 = x2 - x1 + 1;
+  int n2 = y2 - y1 + 1;
+  gsl_matrix * newMatrix = gsl_matrix_alloc(n1, n2);
+  gsl_matrix_view v = gsl_matrix_submatrix(m, x1, y1, n1, n2);
+  gsl_matrix_memcpy(newMatrix, &v.matrix);
+  return newMatrix;
+}
+
+// BLAS
+double mdot(gsl_matrix * m1, gsl_matrix * m2) {
+  // Both matrices need to have same number of columns and one row
+  double* result = malloc(sizeof(float));
+  gsl_vector_view v1_view = gsl_matrix_row(m1, 0);
+  gsl_vector_view v2_view = gsl_matrix_row(m2, 0);
+  gsl_vector * v1 = gsl_vector_alloc(v1_view.vector.size);
+  gsl_vector * v2 = gsl_vector_alloc(v2_view.vector.size);
+  gsl_vector_memcpy(v1, &v1_view.vector);
+  gsl_vector_memcpy(v2, &v2_view.vector);
+  gsl_blas_ddot(v1, v2, result);
+  double res = *result;
+  free(result);
+  free(v1);
+  free(v2);
+  return res;
+}
+
+gsl_matrix * mmul ( gsl_matrix * m1, gsl_matrix * m2) {
+  if (m1->size2 != m2->size1) {
+    printf("Matrix dimensions do not match!\n");
+    return NULL;
+  }
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m1->size1, m2->size2);
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, m1, m2, 0.0, newMatrix);
+  return newMatrix;
+}
+
+// pipe the operator into SCall to a builtin
+// M + N => SCall (concat, M, N) concat \in builtin
+// keep Tensor as a class
+// use bitcode to translate

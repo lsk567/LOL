@@ -11,5 +11,5 @@ f=$1
 n=${f%.lol*}
 cat $f | ./lol.native > "$n.ll"
 llc -relocation-model=pic "$n.ll"
-cc -o "$n" "$n.s" "builtins.o" "-lm"
+gcc -o "$n" "$n.s" -L/usr/local/lib "builtins.o" -lgsl -lgslcblas -lm
 "./$n"

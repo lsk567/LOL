@@ -8,7 +8,6 @@ module L = Llvm
 open Ast
 open Sast
 open Lift
-open Builtins
 
 module StringMap = Map.Make(String)
 
@@ -20,7 +19,7 @@ let translate functions =
   (* Get types from the context *)
   let i32_t      = L.i32_type    context (* int *)
   and i1_t       = L.i1_type     context (* nool *)
-  and float_t    = L.float_type context (* float *)
+  and float_t    = L.double_type context (* float *)
   and void_t     = L.void_type   context (* void *)
   and void_ptr_t = L.pointer_type (L.i8_type context)
   and str_t      = L.pointer_type (L.i8_type context) (* string *)
@@ -29,8 +28,11 @@ let translate functions =
       None -> raise (Failure "Missing implementation for struct List")
     | Some t -> t)
   and lst_element_t = L.pointer_type (match L.type_by_name llm "struct.List_element" with
-        None -> raise (Failure "Missing implementation for struct List_element")
-      | Some t -> t)
+      None -> raise (Failure "Missing implementation for struct List_element")
+    | Some t -> t)
+  and matrix_t   = L.pointer_type (match L.type_by_name llm "struct.gsl_matrix" with
+      None -> raise (Failure "Missing implementation for struct gsl_matrix")
+    | Some t -> t)
 
   (* Create the LLVM compilation module into which we will generate code *)
   and the_module = L.create_module context "LOL" in
@@ -83,9 +85,10 @@ let translate functions =
     | SEmpty -> void_t
     | SList _ -> list_t
     | SListElement _ -> lst_element_t
-
+    | SMatrix(_,_) -> matrix_t
     | SAny -> void_ptr_t
-    | _ -> raise (Failure "not yet implemented")
+    | SABSTRACT -> void_ptr_t
+    (*| _ -> raise (Failure "not yet implemented"*)
 
   (* Helper funciton to retrieve a function from context*)
   and get_func s lmodule =
@@ -208,8 +211,7 @@ let translate functions =
   (* Builder *)
   let rec expr builder (m : (styp * L.llvalue) StringMap.t) ((styp, e) : sexpr) =
 
-    let lookup_both n = try StringMap.find n m with
-       Not_found -> raise (Failure ("Variable not found: " ^ n)) in
+
     let lookup n = let (_, llval) = try StringMap.find n m with
        Not_found -> raise (Failure ("Variable not found: " ^ n)) in llval
     in
@@ -246,6 +248,7 @@ let translate functions =
       | SClosure clsr -> build_clsr clsr
       | SNoexpr -> L.const_int i32_t 0
       | SAssign(e1, op, e2) ->
+        let (_,se1) = e1 in
         let new_v = match op with
                   NoOp -> expr builder m e2
                 | Add -> expr builder m (styp, SBinop(e1, Add, e2))
@@ -254,9 +257,29 @@ let translate functions =
                 | Div -> expr builder m (styp, SBinop(e1, Div, e2))
                 | _ -> raise (Failure (string_of_op op ^ " not yet implemented"))
         in
-        (match (snd e1) with
-            SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
-         (* NEED LIST ACCESS IMPLEMENTATION *)
+        (match se1 with
+           SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
+         | SListAccess (arr,i) ->
+           let (_,se2) = arr in
+           let arr = match se2 with SId(x) -> x | _-> raise (Failure("ListAccess shoudn't happen")) in
+           let ltype = ltype_of_styp styp in
+           let lst = L.build_load (lookup arr) arr builder in
+           let index = expr builder m i in
+           let data = L.build_malloc ltype "data" builder in
+           ignore(L.build_store new_v data builder);
+           let data = L.build_bitcast data void_ptr_t "data" builder in
+           let list_set_f = get_func "list_set" the_module in
+           ignore(L.build_call list_set_f [| lst; data; index |] "list_set" builder);
+           new_v
+         | SMatrixGet (mat, i, j) ->
+           let (_,se2) = mat in
+           let mat = match se2 with SId(x) -> x | _-> raise (Failure("SMatrixGet shoudn't happen")) in
+           let lst = L.build_load (lookup mat) mat builder in
+           let li = expr builder m i in
+           let lj = expr builder m j in
+           let matrix_set_f = get_func "mset" the_module in
+           ignore(L.build_call matrix_set_f [| lst; li; lj; new_v |] "mset" builder);
+           new_v
          | _ -> raise (Failure ("assignment for " ^ (string_of_sexpr e2)
                 ^ "SAssign not implemented in codegen")))
       | SBinop (e1, op, e2) ->
@@ -276,6 +299,9 @@ let translate functions =
                    | Leq     -> L.build_fcmp L.Fcmp.Ole
                    | Greater -> L.build_fcmp L.Fcmp.Ogt
                    | Geq     -> L.build_fcmp L.Fcmp.Oge
+                   | Pow     -> let pow_f = get_func "pow" the_module in
+                     let powpowpow e1 e2 str builder = L.build_call pow_f [| e1; e2 |] str builder in
+                     powpowpow
                    | _ ->
                      raise (Failure ("internal error: "
                        ^ "semant should have rejected and/or on float"))
@@ -285,6 +311,7 @@ let translate functions =
                    | Sub     -> L.build_sub
                    | Mul     -> L.build_mul
                    | Div     -> L.build_sdiv
+                   | Mod     -> L.build_srem
                    | And     -> L.build_and
                    | Or      -> L.build_or
                    | Equal   -> L.build_icmp L.Icmp.Eq
@@ -293,6 +320,7 @@ let translate functions =
                    | Leq     -> L.build_icmp L.Icmp.Sle
                    | Greater -> L.build_icmp L.Icmp.Sgt
                    | Geq     -> L.build_icmp L.Icmp.Sge
+                   | _ -> raise (Failure( "Not exhausive" ))
                  ) e1' e2' "tmp" builder
                | SBool -> (match op with
                      And     -> L.build_and
@@ -402,14 +430,104 @@ let translate functions =
       let item = expr builder m it in
       let (typ, _) = it in
       let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
-      let unused = L.build_store item data_ptr builder in
+      ignore(L.build_store item data_ptr builder);
       let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
       let list_append_f = get_func "list_append" the_module in
-      L.build_call list_append_f [|arr_var; data|] "" builder
+        L.build_call list_append_f [|arr_var; data|] "" builder
     | SListLength(arr) ->
       let arr_var = expr builder m arr in
       let list_length_f = get_func "list_length" the_module in
       L.build_call list_length_f [|arr_var|] "list_length" builder
+
+    (* Matrix Operations *)
+    | SMatrixLit(sm) ->
+      (* Function for fold_left for each SFloat, set in matrix *)
+      let matrix_fill_row (m,mat,i,j) sx =
+          let data = expr builder m sx in
+          let matrix_set_elem_f = get_func "mset" the_module in
+          let jl = expr builder m (SInt,SIntLit(j)) in
+          let il = expr builder m (SInt,SIntLit(i)) in
+          ignore (L.build_call matrix_set_elem_f [| mat; il ; jl ; data |] "" builder);
+          (m,mat,i,j+1)
+      in
+      (* Function for fold_left for each row (SList)  *)
+      let matrix_fill (m,mat,i) (_,sx)=
+          match sx with
+              SListLit l -> let (m,mat,_,_) = List.fold_left matrix_fill_row (m,mat,i,0) l in (m,mat,i+1)
+            | _ -> raise (Failure ("MatrixFill in SMatrixLit Shoudn't happen"))
+      in
+
+      let matrix_init_f = get_func "minit" the_module in
+      let row = expr builder m (SInt,SIntLit(sm.srow)) in
+      let col = expr builder m (SInt,SIntLit(sm.scol)) in
+      let mat = L.build_call matrix_init_f [|row; col|] "minit" builder in
+      let (_,mat,_) = List.fold_left matrix_fill (m,mat,0) sm.scontent in
+      mat
+    | SMatrixRow(mat) ->
+      let mat_var = expr builder m mat in
+      let matrix_row_f = get_func "mrow" the_module in
+      L.build_call matrix_row_f [|mat_var|] "mcol" builder
+    | SMatrixCol(mat) ->
+      let mat_var = expr builder m mat in
+      let matrix_col_f = get_func "mcol" the_module in
+      L.build_call matrix_col_f [|mat_var|] "mcol" builder
+    | SMatrixGet (mat,i,j) ->
+      let il = expr builder m i in
+      let jl = expr builder m j in
+      let mat = expr builder m mat in
+      let matrix_get_elem_f = get_func "mget" the_module in
+      L.build_call matrix_get_elem_f [|mat;il;jl|] "" builder;
+
+    | SMatrixSet (mat, i, j, x) ->
+      let matl = expr builder m mat in
+      let il = expr builder m i in
+      let jl = expr builder m j in
+      let xl = expr builder m x in
+      let matrix_set_elem_f = get_func "mset" the_module in
+      L.build_call matrix_set_elem_f [|matl; il; jl; xl|] "" builder
+
+    | SMatrixAdd (mat1, mat2) ->
+      let mat1l = expr builder m mat1 in
+      let mat2l = expr builder m mat2 in
+      let matrix_add_f = get_func "madd" the_module in
+      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+
+    | SMatrixSub (mat1, mat2) ->
+      let mat1l = expr builder m mat1 in
+      let mat2l = expr builder m mat2 in
+      let matrix_f = get_func "msub" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
+
+    | SMatrixMulC (mat, x) ->
+      let matl = expr builder m mat in
+      let xl = expr builder m x in
+      let matrix_f = get_func "mmulc" the_module in
+      L.build_call matrix_f [|matl; xl|] "" builder
+
+    | SMatrixAddC (mat, x) ->
+      let matl = expr builder m mat in
+      let xl = expr builder m x in
+      let matrix_f = get_func "maddc" the_module in
+      L.build_call matrix_f [|matl; xl|] "" builder
+
+    | SMatrixMulE (m1, m2) ->
+      let mat1l = expr builder m m1 in
+      let mat2l = expr builder m m2 in
+      let matrix_f = get_func "mmule" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
+
+    | SMatrixDivE (m1, m2) ->
+      let mat1l = expr builder m m1 in
+      let mat2l = expr builder m m2 in
+      let matrix_f = get_func "mdive" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
+    
+    | SMatrixMul (m1, m2) ->
+      let mat1l = expr builder m m1 in
+      let mat2l = expr builder m m2 in
+      let matrix_f = get_func "mmul" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
+
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
   in
@@ -514,9 +632,10 @@ let translate functions =
       let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
       (L.builder_at_end context merge_bb, m)
     (* Implement for loops as while loops! *)
-    | SFor (e1, e2, e3, body) -> stmt builder m
-          ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
-    | _ -> raise (Failure "stmt not implemented in codegen")
+    | SFor (init, e2, e3, body) -> stmt builder m
+          ( SBlock [init ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+    | SNostmt -> (builder, m)
+    (*| _ -> raise (Failure "stmt not implemented in codegen")*)
 
   in
 
@@ -525,10 +644,10 @@ let translate functions =
 
   (* add a return if the last block falls off the end *)
   add_terminal builder (match lfexpr.lreturn_typ with
-        SVoid -> L.build_ret_void
-      | SString -> L.build_ret (L.build_global_stringptr "" "str" builder)
-      | SFloat -> L.build_ret (L.const_float float_t 0.0)
-      | t -> L.build_ret (L.const_int (ltype_of_styp t) 0))
+      SVoid -> L.build_ret_void
+    | SString -> L.build_ret (L.build_global_stringptr "" "str" builder)
+    | SFloat -> L.build_ret (L.const_float_of_string float_t "0.0")
+    | t -> L.build_ret (L.const_int (ltype_of_styp t) 0))
 
 in
 List.iter build_function_body functions;
