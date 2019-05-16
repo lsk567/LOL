@@ -274,6 +274,8 @@ and check_two_matrices_dim sym_table m1 m2 =
   let (row2, col2) = match t2 with
     | SMatrix (r2, c2) -> (r2, c2)
     | _ -> raise (Failure "Shoudn't happen") in
+  Printf.printf "%d" row1; Printf.printf "%d" col1;
+  Printf.printf "%d" row2; Printf.printf "%d" col2;
   if row1 = row2 && col1 = col2 then
     ((t1, sx1), (t2, sx2))
   else raise (Failure ("Matrix dimensions do not match."))

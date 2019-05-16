@@ -102,7 +102,7 @@ let rec styp_of_typ typ = match typ with
   | Void -> SVoid
   | List ty -> if ty = Void then raise (Failure ("Cannot declare a void list")) else SList (styp_of_typ ty)
   | Func func_typ -> SFunc { sreturn_typ = styp_of_typ func_typ.return_typ; sparam_typs = List.map styp_of_typ func_typ.param_typs} (* Default SFunc to be void and no param*)
-  | Matrix -> SMatrix(0,0)
+  | Matrix -> SMatrix(6666666,6666666)
   | Abstract -> SABSTRACT
   | _ -> raise (Failure ("styp_of_typ for " ^ string_of_typ typ ^ " not implmented"))
 
