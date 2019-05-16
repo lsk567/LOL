@@ -263,7 +263,7 @@ let translate functions =
            SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
          | SListAccess (arr,i) ->
            let (t2,se2) = arr in
-           let arr = match se2 with SId(x) -> x | _-> raise (Failure("shoudn't happen")) in
+           let arr = match se2 with SId(x) -> x | _-> raise (Failure("ListAccess shoudn't happen")) in
            let ltype = ltype_of_styp styp in
            let lst = L.build_load (lookup arr) arr builder in
            let index = expr builder m i in
@@ -275,7 +275,7 @@ let translate functions =
            new_v
          | SMatrixGet (mat, i, j) ->
            let (t2,se2) = mat in
-           let mat = match se2 with SId(x) -> x | _-> raise (Failure("shoudn't happen")) in
+           let mat = match se2 with SId(x) -> x | _-> raise (Failure("SMatrixGet shoudn't happen")) in
            let ltype = ltype_of_styp styp in
            let lst = L.build_load (lookup mat) mat builder in
            let li = expr builder m i in
@@ -458,7 +458,7 @@ let translate functions =
       let matrix_fill (m,mat,i) (typ,sx)=
           match sx with
               SListLit l -> let (m,mat,_,_) = List.fold_left matrix_fill_row (m,mat,i,0) l in (m,mat,i+1)
-            | _ -> raise (Failure ("Shoudn't happen"))
+            | _ -> raise (Failure ("MatrixFill in SMatrixLit Shoudn't happen"))
       in
 
       let matrix_init_f = get_func "minit" the_module in

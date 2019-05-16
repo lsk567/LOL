@@ -282,9 +282,9 @@ and check_two_matrices_dim sym_table m1 m2 =
 and check_matrix_idx m i j symbol_table =
   let (t1,se1) = check_expr symbol_table m in
   let (t2,se2) = check_expr symbol_table i in
-  let i = match se2 with SIntLit(i) -> i | _ -> raise (Failure "Shoudn't happen") in
+  let i = match se2 with SIntLit(i) -> i | _ -> -1 in
   let (t3,se3) = check_expr symbol_table j in
-  let j = match se3 with SIntLit(j) -> j | _ -> raise (Failure "Shoudn't happen") in
+  let j = match se3 with SIntLit(j) -> j | _ -> -1 in
   let var = match se1 with SId var -> var | _ ->  raise (Failure "Shoudn't happen") in
   let (mi,mj) = match (StringMap.find var symbol_table) with SMatrix(mi,mj) -> (mi,mj) | typ -> raise(Failure("Not calling a matrix. Got " ^ string_of_styp typ)) in
   if i < mi && j < mj
