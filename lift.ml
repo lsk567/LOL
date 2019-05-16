@@ -93,7 +93,7 @@ let rec dfs_sstmt funcs env sstmt =
         let (funcs2, fvs2, _, s') = dfs_sstmt funcs1 env s in
         (funcs2, List.concat [fvs1; fvs2], env, SWhile(e', s'))
       | SNostmt -> (funcs, [], env, SNostmt)
-      | _ -> print_endline(string_of_sstmt sstmt); raise (Failure "not implemented in lifter")
+      (*| _ -> print_endline(string_of_sstmt sstmt); raise (Failure "not implemented in lifter")*)
     in
     let check_scope (_, fv) = not (StringMap.mem fv env.variables) in
     let fvs' = List.filter check_scope fvs' in
