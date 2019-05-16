@@ -28,6 +28,7 @@ let builtins = [
   ("list_append", SFunc({sparam_typs = [SList (SAny); SAny]; sreturn_typ = SVoid }));
   ("list_get", SFunc({sparam_typs = [SList (SAny); SInt]; sreturn_typ = SListElement (SAny) }));
   ("list_length", SFunc({sparam_typs= [SList (SAny)]; sreturn_typ = SInt }));
+  ("list_set", SFunc({sparam_typs= [SList (SAny); SAny ; SInt]; sreturn_typ = SAny }));
 
   (* Matrix functions *)
   (* Basic *)
@@ -41,5 +42,6 @@ let builtins = [
   ("matrix_add_const", SFunc({sparam_typs = [SMatrix(0, 0); SFloat]; sreturn_typ = SInt }));
   ("matrix_mul_elem", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
   ("matrix_div_elem", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SInt }));
-  
+  ("matrix_row", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
+  ("matrix_col", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
 ]

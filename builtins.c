@@ -295,6 +295,15 @@ int matrix_div_elem(gsl_matrix * a, const gsl_matrix * b) {
   return gsl_matrix_div_elements(a, b);
 }
 
+int matrix_row(gsl_matrix * m){
+  return m->size1;
+}
+
+int matrix_col(gsl_matrix * m){
+  return m->size2;
+}
+
+
 // pipe the operator into SCall to a builtin
 // M + N => SCall (concat, M, N) concat \in builtin
 // keep Tensor as a class

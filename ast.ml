@@ -13,7 +13,6 @@ type typ =
   (* Linalg *)
   (* | Matrix of expr * expr *)
   | Matrix
-  | Tensor
   | Abstract
 
 and func_typ = {
@@ -59,7 +58,8 @@ type expr =
   | MatrixAddC of expr * expr
   | MatrixMulE of expr * expr
   | MatrixDivE of expr * expr
-  (* | TensorLit of expr list *)
+  | MatrixRow of expr
+  | MatrixCol of expr
 
 
 and fexpr = {

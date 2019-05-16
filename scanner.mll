@@ -13,6 +13,8 @@ rule token = parse
 (* Member func *)
 | ".append"            { DAPPEND }
 | ".length"            { DLENGTH }
+| ".col"               { DCOL }
+| ".row"               { DROW }
 | ".set"               { DSET }
 | ".get"               { DGET }
 | ".add"               { DADD }

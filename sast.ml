@@ -49,6 +49,8 @@ and sx =
   | SListLength of sexpr
   (* Matrix *)
   | SMatrixLit of smatrix
+  | SMatrixRow of sexpr
+  | SMatrixCol of sexpr
   | SMatrixSet of sexpr * sexpr * sexpr * sexpr
   | SMatrixGet of sexpr * sexpr * sexpr
   | SMatrixAdd of sexpr * sexpr

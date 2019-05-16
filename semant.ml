@@ -138,7 +138,7 @@ and check_expr symbol_table ?fname = function
       let args_ = List.fold_left2 (fun l func_rt arg -> let (t,se) = check_expr symbol_table arg in
       (infer_typ func_rt t,se)::l) [] sfunc_t.sparam_typs args
       in
-      (sfunc_t.sreturn_typ, SCall((t,se), args_))
+      (sfunc_t.sreturn_typ, SCall((t,se), List.rev args_))
     | _ -> raise (Failure "not a function"))
   | Assign(e1,op,e2) ->
     let (lt, le') = check_expr symbol_table e1
@@ -215,6 +215,20 @@ and check_expr symbol_table ?fname = function
   let sm = List.fold_left check_row { srow = 0; scol=0; scontent = [] } e in
   let sm_rev = { srow = sm.srow; scol = sm.scol; scontent = List.rev sm.scontent } in
   (SMatrix(sm_rev.srow,sm_rev.scol), SMatrixLit(sm_rev))
+  | MatrixRow (m) ->
+    let (t1, se) = check_expr symbol_table m in
+    let t1 = match t1 with
+        SMatrix _ -> t1
+      | _ -> raise (Failure ("Not a matrix: " ^ string_of_sexpr (t1,se)))
+    in
+    (SInt, SMatrixRow((t1,se)))
+  | MatrixCol (m) ->
+    let (t1, se) = check_expr symbol_table m in
+    let t1 = match t1 with
+        SMatrix _ -> t1
+      | _ -> raise (Failure ("Not a matrix: " ^ string_of_sexpr (t1,se)))
+    in
+    (SInt, SMatrixCol((t1,se)))
   (* since i, j, x are defined by primitive types, we can just build a sexpr on the fly here. *)
   | MatrixSet (m, i, j, x) ->
     let (sm,si,sj) = check_matrix_idx m i j symbol_table in
@@ -223,8 +237,8 @@ and check_expr symbol_table ?fname = function
   | MatrixGet (m, i, j) ->
     let (sm,si,sj) = check_matrix_idx m i j symbol_table in
     (SFloat, SMatrixGet (sm, si, sj))
-  
-  | MatrixAdd (m1, m2) -> 
+
+  | MatrixAdd (m1, m2) ->
     let (se1, se2) = check_two_matrices_dim symbol_table m1 m2 in
     (SVoid, SMatrixAdd (se1, se2))
 
@@ -236,7 +250,7 @@ and check_expr symbol_table ?fname = function
     let se1 = check_expr symbol_table m in
     let se2 = check_expr symbol_table x in
     (SVoid, SMatrixMulC (se1, se2))
-    
+
   | MatrixAddC (m, x) ->
     let se1 = check_expr symbol_table m in
     let se2 = check_expr symbol_table x in
@@ -251,14 +265,14 @@ and check_expr symbol_table ?fname = function
     (SVoid, SMatrixDivE (se1, se2))
 
 (* Helper function for checking equal dimensions *)
-and check_two_matrices_dim sym_table m1 m2 = 
+and check_two_matrices_dim sym_table m1 m2 =
   let (t1, sx1) = check_expr sym_table m1 in
   let (t2, sx2) = check_expr sym_table m2 in
   let (row1, col1) = match t1 with
     | SMatrix (r1, c1) -> (r1, c1)
-    | _ -> raise (Failure "Shoudn't happen") in                                                                                                                                                                     
+    | _ -> raise (Failure "Shoudn't happen") in
   let (row2, col2) = match t2 with
-    | SMatrix (r2, c2) -> (r2, c2) 
+    | SMatrix (r2, c2) -> (r2, c2)
     | _ -> raise (Failure "Shoudn't happen") in
   if row1 = row2 && col1 = col2 then
     ((t1, sx1), (t2, sx2))

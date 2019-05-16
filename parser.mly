@@ -3,7 +3,7 @@
   module StringMap = Map.Make (String)
 %}
 
-%token DAPPEND DLENGTH DGET DSET DADD DSUB DMULC DADDC DMULE DDIVE
+%token DAPPEND DLENGTH DGET DSET DADD DSUB DMULC DADDC DMULE DDIVE DROW DCOL
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR MATRIX
 %token QUOTE COLON COMMA DOT
@@ -34,7 +34,7 @@
 %right NOT
 
 %right INC DEC
-%left DAPPEND DLENGTH
+%left DAPPEND DLENGTH DROW DCOL
 
 %start program
 %type <Ast.program> program
@@ -133,7 +133,7 @@ expr:
   /* Matrix */
   | MATRIX LPAREN opt_items RPAREN                          { MatrixLit($3) }
   | accessor DGET LPAREN expr COMMA expr RPAREN             { MatrixGet($1, $4, $6) } /* t.get(1,2) */
-  | accessor DSET LPAREN expr COMMA expr COMMA expr RPAREN  { MatrixSet($1, $4, $6, $8) } 
+  | accessor DSET LPAREN expr COMMA expr COMMA expr RPAREN  { MatrixSet($1, $4, $6, $8) }
   /* Add, sub, mul, div */
   | accessor DADD LPAREN expr RPAREN             { MatrixAdd($1, $4) }
   | accessor DSUB LPAREN expr RPAREN             { MatrixSub($1, $4) }
@@ -148,6 +148,8 @@ accessor:
   | accessor DAPPEND LPAREN expr RPAREN { ListAppend($1, $4) }
   | accessor DLENGTH LPAREN RPAREN { ListLength($1) }
   | accessor LSQBRACE expr RSQBRACE { ListAccess($1, $3) }
+  | accessor DROW LPAREN RPAREN      { MatrixRow($1) }
+  | accessor DCOL LPAREN RPAREN      { MatrixCol($1) }
   | accessor LSQBRACE expr COMMA expr RSQBRACE             { MatrixGet($1, $3, $5) } /* t[1,2] */
   | atom { $1 }
 
@@ -176,7 +178,6 @@ typ:
   | LIST LT typ GT { List($3) }
   /* | MATRIX LT atom COMMA atom GT { Matrix($3, $5) } */
   | MATRIX { Matrix }
-  | TENSOR { Tensor }
 
 /* Helpers */
 typ_opt:

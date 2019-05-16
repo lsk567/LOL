@@ -250,6 +250,7 @@ let translate functions =
       | SClosure clsr -> build_clsr clsr
       | SNoexpr -> L.const_int i32_t 0
       | SAssign(e1, op, e2) ->
+        let (t1,se1) = e1 in
         let new_v = match op with
                   NoOp -> expr builder m e2
                 | Add -> expr builder m (styp, SBinop(e1, Add, e2))
@@ -258,9 +259,20 @@ let translate functions =
                 | Div -> expr builder m (styp, SBinop(e1, Div, e2))
                 | _ -> raise (Failure (string_of_op op ^ " not yet implemented"))
         in
-        (match (snd e1) with
-            SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
-         (* NEED LIST ACCESS IMPLEMENTATION *)
+        (match se1 with
+           SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
+         | SListAccess (arr,i) ->
+           let (t2,se2) = arr in
+           let arr = match se2 with SId(x) -> x | _-> raise (Failure("shoudn't happen")) in
+           let ltype = ltype_of_styp styp in
+           let lst = L.build_load (lookup arr) arr builder in
+           let index = expr builder m i in
+           let data = L.build_malloc ltype "data" builder in
+           ignore(L.build_store new_v data builder);
+           let data = L.build_bitcast data void_ptr_t "data" builder in
+           let list_set_f = get_func "list_set" the_module in
+           ignore(L.build_call list_set_f [| lst; data; index |] "list_set" builder);
+           new_v
          | _ -> raise (Failure ("assignment for " ^ (string_of_sexpr e2)
                 ^ "SAssign not implemented in codegen")))
       | SBinop (e1, op, e2) ->
@@ -289,6 +301,7 @@ let translate functions =
                    | Sub     -> L.build_sub
                    | Mul     -> L.build_mul
                    | Div     -> L.build_sdiv
+                   | Mod     -> L.build_srem
                    | And     -> L.build_and
                    | Or      -> L.build_or
                    | Equal   -> L.build_icmp L.Icmp.Eq
@@ -440,7 +453,14 @@ let translate functions =
       let mat = L.build_call matrix_init_f [|row; col|] "matrix_init" builder in
       let (_,mat,_) = List.fold_left matrix_fill (m,mat,0) sm.scontent in
       mat
-
+    | SMatrixRow(mat) ->
+      let mat_var = expr builder m mat in
+      let matrix_row_f = get_func "matrix_row" the_module in
+      L.build_call matrix_row_f [|mat_var|] "matrix_row" builder
+    | SMatrixCol(mat) ->
+      let mat_var = expr builder m mat in
+      let matrix_col_f = get_func "matrix_col" the_module in
+      L.build_call matrix_col_f [|mat_var|] "matrix_col" builder
     | SMatrixGet (mat,i,j) ->
       let il = expr builder m i in
       let jl = expr builder m j in
