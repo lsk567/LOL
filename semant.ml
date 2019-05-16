@@ -331,8 +331,7 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
         | Func _ -> sfunc_of_func t
         | typ -> styp_of_typ typ
       in
-      let inferred_typ = infer_typ tl tr in
-      (SDecl (inferred_typ, s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
+      (SDecl (infer_typ tl tr,s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
     )
   | Return  e -> let (t1,e1) = check_expr symbol_table e in
     let t = match return_typ with

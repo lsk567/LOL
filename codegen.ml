@@ -8,6 +8,7 @@ module L = Llvm
 open Ast
 open Sast
 open Lift
+open Builtins
 
 module StringMap = Map.Make(String)
 
@@ -88,7 +89,7 @@ let translate functions =
     | SMatrix(_,_) -> matrix_t
     | SAny -> void_ptr_t
     | SABSTRACT -> void_ptr_t
-    (*| _ -> raise (Failure "not yet implemented"*)
+    | _ -> raise (Failure "not yet implemented")
 
   (* Helper funciton to retrieve a function from context*)
   and get_func s lmodule =
@@ -211,7 +212,8 @@ let translate functions =
   (* Builder *)
   let rec expr builder (m : (styp * L.llvalue) StringMap.t) ((styp, e) : sexpr) =
 
-
+    let lookup_both n = try StringMap.find n m with
+       Not_found -> raise (Failure ("Variable not found: " ^ n)) in
     let lookup n = let (_, llval) = try StringMap.find n m with
        Not_found -> raise (Failure ("Variable not found: " ^ n)) in llval
     in
@@ -248,7 +250,7 @@ let translate functions =
       | SClosure clsr -> build_clsr clsr
       | SNoexpr -> L.const_int i32_t 0
       | SAssign(e1, op, e2) ->
-        let (_,se1) = e1 in
+        let (t1,se1) = e1 in
         let new_v = match op with
                   NoOp -> expr builder m e2
                 | Add -> expr builder m (styp, SBinop(e1, Add, e2))
@@ -260,7 +262,7 @@ let translate functions =
         (match se1 with
            SId s -> ignore(L.build_store new_v (lookup s) builder); new_v
          | SListAccess (arr,i) ->
-           let (_,se2) = arr in
+           let (t2,se2) = arr in
            let arr = match se2 with SId(x) -> x | _-> raise (Failure("ListAccess shoudn't happen")) in
            let ltype = ltype_of_styp styp in
            let lst = L.build_load (lookup arr) arr builder in
@@ -272,11 +274,16 @@ let translate functions =
            ignore(L.build_call list_set_f [| lst; data; index |] "list_set" builder);
            new_v
          | SMatrixGet (mat, i, j) ->
-           let (_,se2) = mat in
+           let (t2,se2) = mat in
            let mat = match se2 with SId(x) -> x | _-> raise (Failure("SMatrixGet shoudn't happen")) in
+           let ltype = ltype_of_styp styp in
            let lst = L.build_load (lookup mat) mat builder in
            let li = expr builder m i in
            let lj = expr builder m j in
+           (*
+           let data = L.build_malloc ltype "data" builder in
+           ignore(L.build_store new_v data builder);
+           *)
            let matrix_set_f = get_func "mset" the_module in
            ignore(L.build_call matrix_set_f [| lst; li; lj; new_v |] "mset" builder);
            new_v
@@ -301,7 +308,7 @@ let translate functions =
                    | Geq     -> L.build_fcmp L.Fcmp.Oge
                    | Pow     -> let pow_f = get_func "pow" the_module in
                      let powpowpow e1 e2 str builder = L.build_call pow_f [| e1; e2 |] str builder in
-                     powpowpow
+                     powpowpow                 
                    | _ ->
                      raise (Failure ("internal error: "
                        ^ "semant should have rejected and/or on float"))
@@ -320,7 +327,6 @@ let translate functions =
                    | Leq     -> L.build_icmp L.Icmp.Sle
                    | Greater -> L.build_icmp L.Icmp.Sgt
                    | Geq     -> L.build_icmp L.Icmp.Sge
-                   | _ -> raise (Failure( "Not exhausive" ))
                  ) e1' e2' "tmp" builder
                | SBool -> (match op with
                      And     -> L.build_and
@@ -427,8 +433,10 @@ let translate functions =
       )
     | SListAppend(arr, it) ->
       let arr_var = expr builder m arr in
+      let item = expr builder m it in
       let (typ, _) = it in
       let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
+      let unused = L.build_store item data_ptr builder in
       let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
       let list_append_f = get_func "list_append" the_module in
         L.build_call list_append_f [|arr_var; data|] "" builder
@@ -441,6 +449,7 @@ let translate functions =
     | SMatrixLit(sm) ->
       (* Function for fold_left for each SFloat, set in matrix *)
       let matrix_fill_row (m,mat,i,j) sx =
+          let (typ,_) = sx in
           let data = expr builder m sx in
           let matrix_set_elem_f = get_func "mset" the_module in
           let jl = expr builder m (SInt,SIntLit(j)) in
@@ -449,7 +458,7 @@ let translate functions =
           (m,mat,i,j+1)
       in
       (* Function for fold_left for each row (SList)  *)
-      let matrix_fill (m,mat,i) (_,sx)=
+      let matrix_fill (m,mat,i) (typ,sx)=
           match sx with
               SListLit l -> let (m,mat,_,_) = List.fold_left matrix_fill_row (m,mat,i,0) l in (m,mat,i+1)
             | _ -> raise (Failure ("MatrixFill in SMatrixLit Shoudn't happen"))
@@ -633,7 +642,7 @@ let translate functions =
     | SFor (init, e2, e3, body) -> stmt builder m
           ( SBlock [init ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
     | SNostmt -> (builder, m)
-    (*| _ -> raise (Failure "stmt not implemented in codegen")*)
+    | _ -> raise (Failure "stmt not implemented in codegen")
 
   in
 
