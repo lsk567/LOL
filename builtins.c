@@ -274,11 +274,12 @@ double mget(const gsl_matrix * m, const size_t i, const size_t j) {
 
 // set matrix element
 // void gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, double x)
-void mset(gsl_matrix * m, const size_t i, const size_t j, double x) {
+double mset(gsl_matrix * m, const size_t i, const size_t j, double x) {
   //printf("<%d,%d>\n",m->size1,m->size2);
   //printf("%d,%d\n",i,j);
   gsl_matrix_set(m, i, j, x);
   //print_matrix(m);
+  return x;
 }
 
 // Add. sub. mul. div

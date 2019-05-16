@@ -273,6 +273,20 @@ let translate functions =
            let list_set_f = get_func "list_set" the_module in
            ignore(L.build_call list_set_f [| lst; data; index |] "list_set" builder);
            new_v
+         | SMatrixGet (mat, i, j) ->
+           let (t2,se2) = mat in
+           let mat = match se2 with SId(x) -> x | _-> raise (Failure("shoudn't happen")) in
+           let ltype = ltype_of_styp styp in
+           let lst = L.build_load (lookup mat) mat builder in
+           let li = expr builder m i in
+           let lj = expr builder m j in
+           (*
+           let data = L.build_malloc ltype "data" builder in
+           ignore(L.build_store new_v data builder);
+           *)
+           let matrix_set_f = get_func "mset" the_module in
+           ignore(L.build_call matrix_set_f [| lst; li; lj; new_v |] "mset" builder);
+           new_v
          | _ -> raise (Failure ("assignment for " ^ (string_of_sexpr e2)
                 ^ "SAssign not implemented in codegen")))
       | SBinop (e1, op, e2) ->
