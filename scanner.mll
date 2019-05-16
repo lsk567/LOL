@@ -44,7 +44,7 @@ rule token = parse
 | '^'                  { POW }
 | '/'                  { DIVIDE }
 | '%'                  { MOD }
-| '@'                  { OUTER }
+| '@'                  { MMUL }
 | "+="                 { PLUSASN }
 | "-="                 { MINUSASN }
 | "*="                 { TIMESASN }

@@ -6,7 +6,7 @@
 %token SEMI LPAREN RPAREN LBRACE RBRACE LSQBRACE RSQBRACE
 %token LIST TENSOR MATRIX
 %token QUOTE COLON COMMA DOT
-%token PLUS MINUS TIMES DIVIDE MOD OUTER POW ASSIGN
+%token PLUS MINUS TIMES DIVIDE MOD MMUL POW ASSIGN
 %token PLUSASN MINUSASN TIMESASN DIVIDEASN MODASN INC DEC
 %token EQ NEQ LT GT LEQ GEQ AND OR NOT
 %token IF ELIF ELSE FOR IN WHILE
@@ -28,7 +28,7 @@
 %left EQ NEQ
 %left LT GT LEQ GEQ
 %left PLUS MINUS NEG
-%left TIMES DIVIDE MOD DOT OUTER
+%left TIMES DIVIDE MOD DOT MMUL
 %left POW
 %right NOT
 
@@ -93,7 +93,7 @@ expr:
   | expr DIVIDE expr { Binop($1, Div, $3)     }
   | expr MOD    expr   { Binop($1, Mod,   $3) }
   | expr POW    expr   { Binop($1, Pow,   $3) }
-  | expr OUTER    expr { Binop($1, Outer, $3) }
+  | expr MMUL   expr { MatrixMul($1, $3) }
   | expr EQ     expr { Binop($1, Equal, $3)   }
   | expr NEQ    expr { Binop($1, Neq,   $3)   }
   | expr LT     expr { Binop($1, Less,  $3)   }
