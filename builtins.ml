@@ -55,5 +55,6 @@ let builtins = [
   ("mgetsub", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
   (* BLAS *)
   ("mdot", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SFloat }));
+  ("mmul", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SMatrix(0, 0) }));
   
 ]

@@ -377,6 +377,16 @@ double mdot(gsl_matrix * m1, gsl_matrix * m2) {
   return res;
 }
 
+gsl_matrix * mmul ( gsl_matrix * m1, gsl_matrix * m2) {
+  if (m1->size2 != m2->size1) {
+    printf("Matrix dimensions do not match!\n");
+    return NULL;
+  }
+  gsl_matrix * newMatrix = gsl_matrix_calloc(m1->size1, m2->size2);
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, m1, m2, 0.0, newMatrix);
+  return newMatrix;
+}
+
 // pipe the operator into SCall to a builtin
 // M + N => SCall (concat, M, N) concat \in builtin
 // keep Tensor as a class
