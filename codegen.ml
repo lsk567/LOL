@@ -455,12 +455,12 @@ let translate functions =
       mat
     | SMatrixRow(mat) ->
       let mat_var = expr builder m mat in
-      let matrix_row_f = get_func "matrix_row" the_module in
-      L.build_call matrix_row_f [|mat_var|] "matrix_row" builder
+      let matrix_row_f = get_func "mrow" the_module in
+      L.build_call matrix_row_f [|mat_var|] "mcol" builder
     | SMatrixCol(mat) ->
       let mat_var = expr builder m mat in
-      let matrix_col_f = get_func "matrix_col" the_module in
-      L.build_call matrix_col_f [|mat_var|] "matrix_col" builder
+      let matrix_col_f = get_func "mcol" the_module in
+      L.build_call matrix_col_f [|mat_var|] "mcol" builder
     | SMatrixGet (mat,i,j) ->
       let il = expr builder m i in
       let jl = expr builder m j in

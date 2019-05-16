@@ -258,11 +258,11 @@ gsl_matrix * minit(size_t m, size_t n) {
   return gsl_matrix_calloc(m, n);
 }
 
-int matrix_row(gsl_matrix * m){
+int mrow(gsl_matrix * m){
   return m->size1;
 }
 
-int matrix_col(gsl_matrix * m){
+int mcol(gsl_matrix * m){
   return m->size2;
 }
 
