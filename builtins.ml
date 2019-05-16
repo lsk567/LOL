@@ -38,10 +38,10 @@ let builtins = [
   (* Basic *)
   ("minit", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
   ("mget", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SFloat }));
-  ("mset", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SVoid }));
-  (* Matrix Properties *)
-  ("matrix_row", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
-  ("matrix_col", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
+  ("mset", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SFloat }));
+  (* Matrix Property *)
+  ("mrow", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
+  ("mcol", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
   ("mmax", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SFloat}));
   ("mdet", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SFloat}));
   (* Add, sub, mul, div *)
@@ -65,5 +65,8 @@ let builtins = [
   (* BLAS *)
   ("mdot", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SFloat }));
   ("mmul", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SMatrix(0, 0) }));
-  
+
+  (* Advanced binop*)
+  ("pow", SFunc({ sparam_typs = [SFloat; SFloat]; sreturn_typ = SFloat }));
+
 ]

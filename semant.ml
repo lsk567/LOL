@@ -76,7 +76,7 @@ let check statements =
       | (_,SABSTRACT) -> lt
       (* Matrix *)
       (* Add special rule here to link Matrix and List if we were to remove matrix constructor *)
-      | (SMatrix _ ,SMatrix (i,j)) -> SMatrix (i,j)
+      | (SMatrix _ ,SMatrix (i,j)) -> rt
       | _ -> if (lt = rt) then lt
              else raise (Failure ("illegal assignment " ^ string_of_styp lt ^ " = " ^ string_of_styp rt))
 
@@ -153,7 +153,7 @@ and check_expr symbol_table ?fname = function
     ( (match op with
         (* May need to add cross type op *)
           Add | Sub | Mul | Div | Mod | Pow when infered_typ = SInt -> SInt
-        | Add | Sub | Mul | Div when infered_typ = SFloat -> SFloat
+        | Add | Sub | Mul | Div | Pow when infered_typ = SFloat -> SFloat
         | Add                       when infered_typ = SString -> SString
         | Add                       when (match infered_typ with SList _ -> true | _ -> false) -> infered_typ
         | Equal | Neq                 -> SBool
@@ -314,15 +314,12 @@ and check_stmt (curr_lst, symbol_table,return_typ)  = function
       in
       if StringMap.mem s built_in_decls
       then raise (Failure ("Variable name cannot be a built-in function" ^ (string_of_stmt exp)))
-      (* David to check the following code *)
-      (* else let ty = match t with
-        | Func _ -> if t' = SVoid then SFunc (empty_func SVoid) else t'
-        | _ -> t' *)
       else let tl = match t with (* Func with *)
         | Func func_typ -> sfunc_of_func t
         | typ -> styp_of_typ typ
       in
-      (SDecl (infer_typ tl tr, s, (tr,er)):: curr_lst, StringMap.add s tl symbol_table,return_typ)
+      let inferred_typ = infer_typ tl tr in
+      (SDecl (inferred_typ, s, (tr,er)):: curr_lst, StringMap.add s inferred_typ symbol_table,return_typ)
     )
   | Return  e -> let (t1,e1) = check_expr symbol_table e in
     let t = match return_typ with

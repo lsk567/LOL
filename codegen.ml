@@ -273,6 +273,20 @@ let translate functions =
            let list_set_f = get_func "list_set" the_module in
            ignore(L.build_call list_set_f [| lst; data; index |] "list_set" builder);
            new_v
+         | SMatrixGet (mat, i, j) ->
+           let (t2,se2) = mat in
+           let mat = match se2 with SId(x) -> x | _-> raise (Failure("shoudn't happen")) in
+           let ltype = ltype_of_styp styp in
+           let lst = L.build_load (lookup mat) mat builder in
+           let li = expr builder m i in
+           let lj = expr builder m j in
+           (*
+           let data = L.build_malloc ltype "data" builder in
+           ignore(L.build_store new_v data builder);
+           *)
+           let matrix_set_f = get_func "mset" the_module in
+           ignore(L.build_call matrix_set_f [| lst; li; lj; new_v |] "mset" builder);
+           new_v
          | _ -> raise (Failure ("assignment for " ^ (string_of_sexpr e2)
                 ^ "SAssign not implemented in codegen")))
       | SBinop (e1, op, e2) ->
@@ -292,6 +306,9 @@ let translate functions =
                    | Leq     -> L.build_fcmp L.Fcmp.Ole
                    | Greater -> L.build_fcmp L.Fcmp.Ogt
                    | Geq     -> L.build_fcmp L.Fcmp.Oge
+                   | Pow     -> let pow_f = get_func "pow" the_module in
+                     let powpowpow e1 e2 str builder = L.build_call pow_f [| e1; e2 |] str builder in
+                     powpowpow                 
                    | _ ->
                      raise (Failure ("internal error: "
                        ^ "semant should have rejected and/or on float"))
@@ -455,12 +472,12 @@ let translate functions =
       mat
     | SMatrixRow(mat) ->
       let mat_var = expr builder m mat in
-      let matrix_row_f = get_func "matrix_row" the_module in
-      L.build_call matrix_row_f [|mat_var|] "matrix_row" builder
+      let matrix_row_f = get_func "mrow" the_module in
+      L.build_call matrix_row_f [|mat_var|] "mcol" builder
     | SMatrixCol(mat) ->
       let mat_var = expr builder m mat in
-      let matrix_col_f = get_func "matrix_col" the_module in
-      L.build_call matrix_col_f [|mat_var|] "matrix_col" builder
+      let matrix_col_f = get_func "mcol" the_module in
+      L.build_call matrix_col_f [|mat_var|] "mcol" builder
     | SMatrixGet (mat,i,j) ->
       let il = expr builder m i in
       let jl = expr builder m j in
