@@ -34,7 +34,7 @@ let builtins = [
   (* Basic *)
   ("minit", SFunc({sparam_typs = [SInt; SInt]; sreturn_typ = SMatrix(0,0) }));
   ("mget", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt]; sreturn_typ = SFloat }));
-  ("mset", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SVoid }));
+  ("mset", SFunc({sparam_typs = [SMatrix(0, 0); SInt; SInt; SFloat]; sreturn_typ = SFloat }));
   ("mrow", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
   ("mcol", SFunc({sparam_typs = [SMatrix(0,0)]; sreturn_typ = SInt}));
   (* Add, sub, mul, div *)
