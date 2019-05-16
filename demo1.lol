@@ -46,14 +46,18 @@ func void getEigenValues(Matrix matrix) {
 	}
 }
 
-Matrix mat = Matrix([1.0,-2.0], [3.0,6.0], [8.0, 4,0]);
+Matrix mat = Matrix([1.0,-2.0], [3.0,6.0], [8.0, 4.0]);
 println("Calculate the eigenvalue of first matrix");
 printm(mat);
 getEigenValues(mat);
+println(" ");
+println(" ");
 mat = Matrix([2.0,-1.0], [-1.0,2.0]);
 println("Calculate the eigenvalue of second matrix");
 printm(mat);
 getEigenValues(mat);
+println(" ");
+println(" ");
 mat = Matrix([94.45,-4645.4], [3.47,655.69]);
 println("Calculate the eigenvalue of third matrix");
 printm(mat);
