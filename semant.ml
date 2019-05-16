@@ -153,7 +153,7 @@ and check_expr symbol_table ?fname = function
     ( (match op with
         (* May need to add cross type op *)
           Add | Sub | Mul | Div | Mod | Pow when infered_typ = SInt -> SInt
-        | Add | Sub | Mul | Div when infered_typ = SFloat -> SFloat
+        | Add | Sub | Mul | Div | Pow when infered_typ = SFloat -> SFloat
         | Add                       when infered_typ = SString -> SString
         | Add                       when (match infered_typ with SList _ -> true | _ -> false) -> infered_typ
         | Equal | Neq                 -> SBool

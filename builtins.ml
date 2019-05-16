@@ -57,4 +57,7 @@ let builtins = [
   ("mdot", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SFloat }));
   ("mmul", SFunc({sparam_typs = [SMatrix(0, 0); SMatrix(0, 0)]; sreturn_typ = SMatrix(0, 0) }));
 
+  (* Advanced binop*)
+  ("pow", SFunc({ sparam_typs = [SFloat; SFloat]; sreturn_typ = SFloat }));
+
 ]
