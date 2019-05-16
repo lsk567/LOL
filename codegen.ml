@@ -306,6 +306,9 @@ let translate functions =
                    | Leq     -> L.build_fcmp L.Fcmp.Ole
                    | Greater -> L.build_fcmp L.Fcmp.Ogt
                    | Geq     -> L.build_fcmp L.Fcmp.Oge
+                   | Pow     -> let pow_f = get_func "pow" the_module in
+                     let powpowpow e1 e2 str builder = L.build_call pow_f [| e1; e2 |] str builder in
+                     powpowpow                 
                    | _ ->
                      raise (Failure ("internal error: "
                        ^ "semant should have rejected and/or on float"))
