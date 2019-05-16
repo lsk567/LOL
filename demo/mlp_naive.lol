@@ -55,7 +55,11 @@ func List<float> fc2 (List<float> x, int size){
 List<List<float>> input = [[0.0, 0.0],[0.0, 1.0],[1.0, 0.0],[1.0, 1.0]];
 
 // list of function to be passed sequentially
-List<func(List<float>,int:List<float>)> sequential = [fc1,relu,fc2,relu];
+List<func(List<float>,int:List<float>)> sequential = [];
+sequential.append(fc1);
+sequential.append(relu);
+sequential.append(fc2);
+sequential.append(relu);
 
 // helper for the correct dimension
 List<int> dim = [2,2,1,1];
