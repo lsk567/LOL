@@ -1,3 +1,5 @@
+//Reference: https://github.com/tthttl/eigenvalues/blob/master/src/main/java/EigenValue.java
+
 func void printEigenValues(List<float> result) {
 	println("Eigen value(s): ");
 	for (int i = 0; i < result.length(); i++) {
@@ -43,7 +45,16 @@ func void getEigenValues(Matrix matrix) {
 	printEigenValues(result);
 	}
 }
-Matrix mat = Matrix([94.45,-4645.4], [3.47,655.69]);
+
+Matrix mat = Matrix([1.0,-2.0], [3.0,6.0], [8.0, 4,0]);
+println("Calculate the eigenvalue of first matrix");
 printm(mat);
 getEigenValues(mat);
-
+mat = Matrix([2.0,-1.0], [-1.0,2.0]);
+println("Calculate the eigenvalue of second matrix");
+printm(mat);
+getEigenValues(mat);
+mat = Matrix([94.45,-4645.4], [3.47,655.69]);
+println("Calculate the eigenvalue of third matrix");
+printm(mat);
+getEigenValues(mat);
