@@ -60,6 +60,7 @@ type expr =
   | MatrixDivE of expr * expr
   | MatrixRow of expr
   | MatrixCol of expr
+  | MatrixMul of expr * expr
 
 
 and fexpr = {
@@ -155,6 +156,7 @@ and string_of_expr = function
   | MatrixAddC (m, x) -> "MatrixAddC( " ^ string_of_expr m ^ ", " ^ string_of_expr x ^ " )"
   | MatrixMulE (m1, m2) -> "MatrixMulE( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
   | MatrixDivE (m1, m2) -> "MatrixDivE( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
+  | MatrixMul (m1, m2) -> "MatrixMul( " ^ string_of_expr m1 ^ ", " ^ string_of_expr m2 ^ " )"
 
 and string_of_fexpr fexpr =
   let string_of_param param = let (typ, s) = param

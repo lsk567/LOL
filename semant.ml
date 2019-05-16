@@ -264,6 +264,18 @@ and check_expr symbol_table ?fname = function
     let (se1, se2) = check_two_matrices_dim symbol_table m1 m2 in
     (SVoid, SMatrixDivE (se1, se2))
 
+  | MatrixMul (m1, m2) ->
+    let (t1, sx1) = check_expr symbol_table m1 in
+    let (t2, sx2) = check_expr symbol_table m2 in
+    let (row1, col1) = match t1 with
+    | SMatrix (r1, c1) -> (r1, c1)
+    | _ -> raise (Failure "Shoudn't happen") in
+    let (row2, col2) = match t2 with
+    | SMatrix (r2, c2) -> (r2, c2) in
+    if col1 = row2 then
+      (SMatrix (row1, col2), SMatrixMul ((t1, sx1), (t2, sx2)))
+    else raise (Failure ("Matrix dimensions do not match for matrix multiplication."))
+
 (* Helper function for checking equal dimensions *)
 and check_two_matrices_dim sym_table m1 m2 =
   let (t1, sx1) = check_expr sym_table m1 in

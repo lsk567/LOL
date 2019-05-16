@@ -59,6 +59,7 @@ and sx =
   | SMatrixAddC of sexpr * sexpr
   | SMatrixMulE of sexpr * sexpr
   | SMatrixDivE of sexpr * sexpr
+  | SMatrixMul of sexpr * sexpr
   (* Other *)
   | SClosure of sclsr
   | SNoexpr
@@ -181,6 +182,7 @@ and string_of_sexpr (styp,sx) = "(" ^ string_of_styp styp ^ " : "
    | SMatrixAddC (m, x) -> "SMatrixAddC( " ^ string_of_sexpr m ^ ", " ^ string_of_sexpr x ^ " )"
    | SMatrixMulE (m1, m2) -> "SMatrixMulE( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
    | SMatrixDivE (m1, m2) -> "SMatrixDivE( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
+   | SMatrixMul (m1, m2) -> "SMatrixMul( " ^ string_of_sexpr m1 ^ ", " ^ string_of_sexpr m2 ^ " )"
   ) ^ ")"
 
 and string_of_sparam sparam = let (styp, s) = sparam in

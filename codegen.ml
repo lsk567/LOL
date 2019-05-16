@@ -502,32 +502,38 @@ let translate functions =
     | SMatrixSub (mat1, mat2) ->
       let mat1l = expr builder m mat1 in
       let mat2l = expr builder m mat2 in
-      let matrix_add_f = get_func "msub" the_module in
-      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+      let matrix_f = get_func "msub" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
 
     | SMatrixMulC (mat, x) ->
       let matl = expr builder m mat in
       let xl = expr builder m x in
-      let matrix_add_f = get_func "mmulc" the_module in
-      L.build_call matrix_add_f [|matl; xl|] "" builder
+      let matrix_f = get_func "mmulc" the_module in
+      L.build_call matrix_f [|matl; xl|] "" builder
 
     | SMatrixAddC (mat, x) ->
       let matl = expr builder m mat in
       let xl = expr builder m x in
-      let matrix_add_f = get_func "maddc" the_module in
-      L.build_call matrix_add_f [|matl; xl|] "" builder
+      let matrix_f = get_func "maddc" the_module in
+      L.build_call matrix_f [|matl; xl|] "" builder
 
     | SMatrixMulE (m1, m2) ->
       let mat1l = expr builder m m1 in
       let mat2l = expr builder m m2 in
-      let matrix_add_f = get_func "mmule" the_module in
-      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+      let matrix_f = get_func "mmule" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
 
     | SMatrixDivE (m1, m2) ->
       let mat1l = expr builder m m1 in
       let mat2l = expr builder m m2 in
-      let matrix_add_f = get_func "mdive" the_module in
-      L.build_call matrix_add_f [|mat1l; mat2l|] "" builder
+      let matrix_f = get_func "mdive" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
+    
+    | SMatrixMul (m1, m2) ->
+      let mat1l = expr builder m m1 in
+      let mat2l = expr builder m m2 in
+      let matrix_f = get_func "mmul" the_module in
+      L.build_call matrix_f [|mat1l; mat2l|] "" builder
 
     | _ as x -> print_endline(string_of_sexpr (styp, x));
         raise (Failure "expr not implemented in codegen")
@@ -645,10 +651,10 @@ let translate functions =
 
   (* add a return if the last block falls off the end *)
   add_terminal builder (match lfexpr.lreturn_typ with
-        SVoid -> L.build_ret_void
-      | SString -> L.build_ret (L.build_global_stringptr "" "str" builder)
-      | SFloat -> L.build_ret (L.const_float_of_string float_t "0.0")
-      | t -> L.build_ret (L.const_int (ltype_of_styp t) 0))
+      SVoid -> L.build_ret_void
+    | SString -> L.build_ret (L.build_global_stringptr "" "str" builder)
+    | SFloat -> L.build_ret (L.const_float_of_string float_t "0.0")
+    | t -> L.build_ret (L.const_int (ltype_of_styp t) 0))
 
 in
 List.iter build_function_body functions;
