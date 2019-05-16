@@ -430,7 +430,7 @@ let translate functions =
       let item = expr builder m it in
       let (typ, _) = it in
       let data_ptr = L.build_malloc (ltype_of_styp typ) "data_ptr" builder in
-      let unused = L.build_store item data_ptr builder in
+      ignore(L.build_store item data_ptr builder);
       let data = L.build_bitcast data_ptr void_ptr_t "data" builder in
       let list_append_f = get_func "list_append" the_module in
         L.build_call list_append_f [|arr_var; data|] "" builder

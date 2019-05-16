@@ -1,1 +1,1 @@
-Fatal error: exception Failure("Cannot declare a void list")
+Fatal error: exception Parsing.Parse_error
