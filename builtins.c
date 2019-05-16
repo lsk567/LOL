@@ -7,6 +7,9 @@
 // GSL header files
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_sf.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_permutation.h>
 
 #define MAXFLOATSIZE 50
 
@@ -218,6 +221,20 @@ int int_of_str(char *str){
 
 /*
 =====================================================
+                      Math
+=====================================================
+*/
+
+double exp(double x) {
+  return gsl_sf_exp(x);
+}
+
+double log(double x) {
+  return gsl_sf_log(x);
+}
+
+/*
+=====================================================
                       Matrices
 =====================================================
 */
@@ -258,12 +275,37 @@ gsl_matrix * minit(size_t m, size_t n) {
   return gsl_matrix_calloc(m, n);
 }
 
+// Matrix properties
 int matrix_row(gsl_matrix * m){
   return m->size1;
 }
 
 int matrix_col(gsl_matrix * m){
   return m->size2;
+}
+
+double mmax(gsl_matrix * m) {
+  return gsl_matrix_max(m);
+}
+
+// double mdet(gsl_matrix * m) {
+//   return gsl_linalg_LU_det(m, 1);
+// }
+
+double mdet(gsl_matrix * A) {
+  double det;
+  int signum;
+  gsl_permutation *p = gsl_permutation_alloc(A->size1);
+
+  gsl_matrix *tmpA = gsl_matrix_alloc(A->size1, A->size2);
+  gsl_matrix_memcpy(tmpA , A);
+
+  gsl_linalg_LU_decomp(tmpA , p, &signum);
+  det = gsl_linalg_LU_det(tmpA , signum);
+  gsl_permutation_free(p);
+  gsl_matrix_free(tmpA);
+
+  return det;
 }
 
 // get matrix element
@@ -304,6 +346,24 @@ int mmule(gsl_matrix * a, const gsl_matrix * b) {
 
 int mdive(gsl_matrix * a, const gsl_matrix * b) {
   return gsl_matrix_div_elements(a, b);
+}
+
+int mexpe(gsl_matrix * a) {
+  for (int i = 0; i < a->size1; i++) {
+    for (int j = 0; j < a->size2; j++) {
+      gsl_matrix_set(a, i, j, gsl_sf_exp(gsl_matrix_get(a, i, j)));
+    }
+  }
+  return 0;
+}
+
+int mloge(gsl_matrix * a) {
+  for (int i = 0; i < a->size1; i++) {
+    for (int j = 0; j < a->size2; j++) {
+      gsl_matrix_set(a, i, j, gsl_sf_log(gsl_matrix_get(a, i, j)));
+    }
+  }
+  return 0;
 }
 
 // swap rows and columns, transpose, copy
