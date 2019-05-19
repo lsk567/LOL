@@ -21,3 +21,4 @@
 **/*.log
 **/*.output
 **/*.tab.c
+**/.DS_Store
